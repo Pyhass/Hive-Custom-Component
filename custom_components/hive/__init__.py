@@ -1,0 +1,1 @@
+from homeassistant.components.hive import *

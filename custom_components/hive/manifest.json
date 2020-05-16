@@ -1,0 +1,8 @@
+{
+  "domain": "hive",
+  "name": "Hive",
+  "documentation": "https://github.com/Rendili/hive-for-home-assistant/",
+  "requirements": ["pyhiveapi==0.2.19.3"],
+  "dependencies": [],
+  "codeowners": ["@Rendili", "@KJonline"]
+}
