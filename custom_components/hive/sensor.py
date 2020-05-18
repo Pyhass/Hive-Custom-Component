@@ -12,6 +12,8 @@ from homeassistant.const import (STATE_OFF, STATE_ON, TEMP_CELSIUS)
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.icon import icon_for_battery_level
 
+from . import DATA_HIVE, DOMAIN, HiveEntity
+
 DEPENDENCIES = ['hive']
 
 FRIENDLY_NAMES = {'Heating_CurrentTemperature': "Current Temperature",
@@ -43,7 +45,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     if discovery_info is None:
         return
 
-    session = hass.data[DOMAIN][entry.entry_id]
+    session = hass.data[DATA_HIVE]
     devs = []
     for dev in discovery_info:
         devs.append(HiveSensorEntity(session, dev))
