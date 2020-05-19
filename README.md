@@ -1,8 +1,9 @@
 # Hive Custom Component
 
 This is a custom version of the Home Assistant Hive component.
-This version will take device attributes within the hive system
-and set them up as individual sensors e.g `Living Room Lamp Battery Level`
+This version will setup the Home assitant hive component, but will
+also take device attributes within the hive system and set them up 
+as individual sensors e.g `Living Room Lamp Battery Level`
 
 For details on what the home assistant hive component supports please see below:
 
