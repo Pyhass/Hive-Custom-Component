@@ -23,14 +23,16 @@ files into the custom component directory.
 ## Setting up
 
 This component can be setup by adding the below into your home assistant 
-configurstion. Once complete the integration will be setup and devices
-will be discovered and automatically added to Home Assistant.
+configuration, replacing `<Your hive Username>` and  with your username
+and password used on the [Hive](https://hivehome.com/)" website. 
+Once complete the integration will be setup and devices will be discovered
+and automatically added to Home Assistant.
 
 ```yaml
 hive:
-  username: <Required:Your Username> -- This is your hive username used on hivehome.com
-  password: <Required:Your Password> -- This is your hive password used on hivehome.com
-  scan_interval: <Optional: 2> -- This is the peroid of times in minutes to update from Hive.
+  username: <Your hive Username>
+  password: <Your hive Password>
+  scan_interval: 2 
 ```
 
 :warning: **Setting up this custom version will overwrite the default integration.**
