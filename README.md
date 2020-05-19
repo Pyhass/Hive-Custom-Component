@@ -24,7 +24,7 @@ files into the custom component directory.
 
 This component can be setup by adding the below into your home assistant 
 configuration, replacing `<Your hive Username>` and  with your username
-and password used on the [Hive](https://hivehome.com/)" website. 
+and password used on the [Hive](https://hivehome.com/) website. 
 Once complete the integration will be setup and devices will be discovered
 and automatically added to Home Assistant.
 
