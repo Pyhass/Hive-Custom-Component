@@ -56,3 +56,4 @@ can be reduced to a minimum of 15 second intervals.
 
 
 
+!! Setting up this custom version will overwrite the default integration.
