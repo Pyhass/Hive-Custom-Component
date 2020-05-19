@@ -52,8 +52,3 @@ The scan interval is configured in seconds and
 can be reduced to a minimum of 15 second intervals.
 
 :warning: **Setting up this custom version will overwrite the default integration.**
-
-
-
-
-!! Setting up this custom version will overwrite the default integration.
