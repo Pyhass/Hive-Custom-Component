@@ -32,4 +32,4 @@ hive:
   scan_interval: <Optional: 2> -- This is the peroid of times in minutes to update from Hive.
 ```
 
-!! Setting up this custom version will overwrite the default integration.
+:warning: **Setting up this custom version will overwrite the default integration.**
