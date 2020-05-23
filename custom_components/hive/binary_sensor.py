@@ -42,8 +42,8 @@ class HiveBinarySensorEntity(HiveEntity, BinarySensorEntity):
     def device_info(self):
         """Return device information."""
         return {
-            "identifiers": {(DOMAIN, self.device["hive_id"])},
-            "name": self.device["hive_name"],
+            "identifiers": {(DOMAIN, self.device["device_id"])},
+            "name": self.device["device_name"],
             "model": self.device["device_data"]["model"],
             "manufacturer": self.device["device_data"]["manufacturer"],
             "sw_version": self.device["device_data"]["version"],
@@ -60,6 +60,11 @@ class HiveBinarySensorEntity(HiveEntity, BinarySensorEntity):
     def name(self):
         """Return the name of the binary sensor."""
         return self.device["ha_name"]
+
+    @property
+    def available(self):
+        """Return if the device is availble"""
+        return self.device["device_data"]["online"]
 
     @property
     def device_state_attributes(self):

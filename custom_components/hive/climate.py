@@ -70,7 +70,7 @@ class HiveClimateEntity(HiveEntity, ClimateEntity):
     def __init__(self, hive_session, hive_device):
         """Initialize the Climate device."""
         super().__init__(hive_session, hive_device)
-        self.thermostat_node_id = hive_device["thermostat_id"]
+        self.thermostat_node_id = hive_device["device_id"]
         self.temperature_type = TEMP_UNIT.get(hive_device["temperatureunit"])
 
     @property
@@ -82,8 +82,8 @@ class HiveClimateEntity(HiveEntity, ClimateEntity):
     def device_info(self):
         """Return device information."""
         return {
-            "identifiers": {(DOMAIN, self.device["hive_id"])},
-            "name": self.device["hive_name"],
+            "identifiers": {(DOMAIN, self.device["device_id"])},
+            "name": self.device["device_name"],
             "model": self.device["device_data"]["model"],
             "manufacturer": self.device["device_data"]["manufacturer"],
             "sw_version": self.device["device_data"]["version"],
@@ -104,7 +104,7 @@ class HiveClimateEntity(HiveEntity, ClimateEntity):
     @property
     def available(self):
         """Return if the device is availble"""
-        return self.attributes["available"]
+        return self.device["device_data"]["online"]
 
     @property
     def device_state_attributes(self):

@@ -5,7 +5,7 @@ from homeassistant.components.water_heater import (
     STATE_OFF,
     STATE_ON,
     SUPPORT_OPERATION_MODE,
-    WaterHeaterDevice,
+    WaterHeaterEntity,
 )
 from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT
 from homeassistant.helpers import aiohttp_client
@@ -51,7 +51,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     async_add_entities(devs, True)
 
 
-class HiveWaterHeater(HiveEntity, WaterHeaterDevice):
+class HiveWaterHeater(HiveEntity, WaterHeaterEntity):
     """Hive Water Heater Device."""
 
     @property
@@ -63,13 +63,12 @@ class HiveWaterHeater(HiveEntity, WaterHeaterDevice):
     def device_info(self):
         """Return device information."""
         return {
-            "identifiers": {(DOMAIN, self.device["hive_id"])},
-            "name": self.device["hive_name"],
+            "identifiers": {(DOMAIN, self.device["device_id"])},
+            "name": self.device["device_name"],
             "model": self.device["device_data"]["model"],
             "manufacturer": self.device["device_data"]["manufacturer"],
             "sw_version": self.device["device_data"]["version"],
-            "via_device": (DOMAIN, self.device["parent_device"]),
-            "battery": self.device["device_data"]["battery"]
+            "via_device": (DOMAIN, self.device["parent_device"])
         }
 
     @property
@@ -85,7 +84,7 @@ class HiveWaterHeater(HiveEntity, WaterHeaterDevice):
     @property
     def available(self):
         """Return if the device is availble"""
-        return self.attributes["available"]
+        return self.device["device_data"]["online"]
 
     @property
     def temperature_unit(self):
@@ -111,5 +110,5 @@ class HiveWaterHeater(HiveEntity, WaterHeaterDevice):
     async def async_update(self):
         """Update all Node data from Hive."""
         await self.hive.session.update_data(self.device)
-        self.device = await self.hive.howater.get_hotwater(self.device)
+        self.device = await self.hive.hotwater.get_hotwater(self.device)
         self.attributes.update(self.device.get("attributes", {}))

@@ -44,8 +44,8 @@ class HiveDevicePlug(HiveEntity, SwitchEntity):
         """Return device information."""
         if self.device["hive_type"] == "activeplug":
             return {
-                "identifiers": {(DOMAIN, self.device["hive_id"])},
-                "name": self.device["hive_name"],
+                "identifiers": {(DOMAIN, self.device["device_id"])},
+                "name": self.device["device_name"],
                 "model": self.device["device_data"]["model"],
                 "manufacturer": self.device["device_data"]["manufacturer"],
                 "sw_version": self.device["device_data"]["version"],
@@ -60,7 +60,7 @@ class HiveDevicePlug(HiveEntity, SwitchEntity):
     @property
     def available(self):
         """Return if the device is availble"""
-        return self.attributes.get("available", True)
+        return self.device["device_data"].get("online", True)
 
     @property
     def device_state_attributes(self):
