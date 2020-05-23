@@ -1,0 +1,34 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Hive Login",
+        "description": "Enter your Hive login information and configuration.",
+        "data": {
+          "username": "Email Address",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "failed_login": "Failed to sign in to the Hive. Please check your username and password and try again.",
+      "login_timeout": "Credential service timed out. Please try again."
+    },
+    "abort": {
+      "login_error": "Error signing into Hive.",
+      "long_lived_error": "Cannot create setup for Hive, please retry again.",
+      "already_configured": "Hive account already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "user": {
+        "title": "Options for Hive",
+        "data": {
+          "scan_interval": "Scan Interval (Seconds)",
+          "ignore_devices": "Device List"
+        }
+      }
+    }
+  }
+}
