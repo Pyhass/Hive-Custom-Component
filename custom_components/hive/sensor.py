@@ -82,8 +82,9 @@ class HiveSensorEntity(HiveEntity, Entity):
     @property
     def available(self):
         """Return if sensor is available"""
-        if self.device["custom"] != "Weather":
+        if self.device["custom"] not in ("Weather", "Availability"):
             return self.device.get("device_data", {}).get("online", True)
+        return True
 
     @property
     def name(self):

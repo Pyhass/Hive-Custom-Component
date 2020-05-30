@@ -43,19 +43,19 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             is_login = await self.hive.login(self.email_address,
                                              self.password)
 
-            # Check if the login was sucessful.
+            # Check if the login was successful.
             if is_login["original"] in (400, 401, 403):
                 errors["base"] = "failed_login"
             elif is_login["original"] == 408:
                 errors["base"] = "login_timeout"
             else:
-                # Login Sucessful
+                # Login Successful
                 login_token = is_login["parsed"]["token"]
                 # Abort if token not found.
                 if not login_token:
                     return self.async_abort(reason="login_error")
 
-                # Get token from exisitng entry
+                # Get token from existing entry
                 c_entries = self.hass.config_entries.async_entries(DOMAIN)
                 if c_entries:
                     for entry in c_entries:
@@ -67,7 +67,7 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 # Create long lived token
                 token_request = await self.hive.create_token(login_token)
 
-                if token_request["original"] != 200 :
+                if token_request["original"] != 200:
                     return self.async_abort(reason="long_lived_error")
                 else:
                     # Store long lived token for future use.
@@ -94,7 +94,7 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_import(self, info):
         """Use auth from config (Username & Password)."""
 
-        # Get user from exisitng entry and abort if already setup
+        # Get user from existing entry and abort if already setup
         c_entries = self.hass.config_entries.async_entries(DOMAIN)
         if c_entries:
             for entry in c_entries:
@@ -139,7 +139,8 @@ class HiveOptionsFlowHandler(config_entries.OptionsFlow):
             return self.async_create_entry(title="", data=user_input)
 
         data_schema = OrderedDict()
-        data_schema[vol.Optional(CONF_SCAN_INTERVAL, default=self.interval)] = int
+        data_schema[vol.Optional(
+            CONF_SCAN_INTERVAL, default=self.interval)] = int
 
         return self.async_show_form(
             step_id="user",

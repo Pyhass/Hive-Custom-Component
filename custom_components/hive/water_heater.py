@@ -83,7 +83,7 @@ class HiveWaterHeater(HiveEntity, WaterHeaterEntity):
 
     @property
     def available(self):
-        """Return if the device is availble"""
+        """Return if the device is available"""
         return self.device["device_data"]["online"]
 
     @property
