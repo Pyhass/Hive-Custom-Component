@@ -30,7 +30,7 @@ custom component directory.
 This component can be setup via 2 methods the
 first is via integrations page. This will 
 prompt you to enter your hive username and 
-password. Once complete theintegration will be
+password. Once complete the integration will be
 setup and devices will be discovered and
 automatically added to Home Assistant. 
 The second option is to add the below into your 
