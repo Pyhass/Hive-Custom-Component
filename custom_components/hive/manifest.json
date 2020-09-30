@@ -2,7 +2,7 @@
   "domain": "hive",
   "name": "Hive",
   "documentation": "https://github.com/Pyhive/HA-Hive-Custom-Component/",
-  "requirements": ["pyhiveapi==0.2.19.3"],
+  "requirements": ["pyhiveapi==0.2.19.4"],
   "dependencies": [],
   "codeowners": ["@Rendili", "@KJonline"]
 }
