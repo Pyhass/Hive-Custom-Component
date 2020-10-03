@@ -27,7 +27,8 @@ SERVICE_BOOST_HOT_WATER = "boost_hot_water"
 SERVICE_BOOST_HEATING = "boost_heating"
 ATTR_TIME_PERIOD = "time_period"
 ATTR_MODE = "on_off"
-PLATFORMS = ["binary_sensor", "climate", "light", "sensor", "switch", "water_heater"]
+PLATFORMS = ["binary_sensor", "climate",
+             "light", "sensor", "switch", "water_heater"]
 
 CONFIG_SCHEMA = vol.Schema(
     {
@@ -182,7 +183,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: config_entries.ConfigEn
     unload_ok = all(
         await asyncio.gather(
             *[
-                hass.config_entries.async_forward_entry_unload(entry, component)
+                hass.config_entries.async_forward_entry_unload(
+                    entry, component)
                 for component in PLATFORMS
             ]
         )

@@ -88,7 +88,6 @@ class HiveClimateEntity(HiveEntity, ClimateEntity):
             "manufacturer": self.device["device_data"]["manufacturer"],
             "sw_version": self.device["device_data"]["version"],
             "via_device": (DOMAIN, self.device["parent_device"]),
-            "battery": self.device["device_data"]["battery"]
         }
 
     @property

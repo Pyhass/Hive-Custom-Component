@@ -14,26 +14,22 @@ from homeassistant.helpers.icon import icon_for_battery_level
 
 DEPENDENCIES = ['hive']
 
-DEVICETYPE_ICONS = {"hub_OnlineStatus": "mdi:switch",
-                    "sense_GLASS_BREAK": "mdi:dock-window",
-                    "sense_SMOKE_CO": "mdi:smoke-detector",
-                    "sense_DOG_BARK": "mdi:dog",
-                    'Heating_CurrentTemperature': 'mdi:thermometer',
-                    'Heating_TargetTemperature': 'mdi:thermometer',
-                    'Heating_State': 'mdi:radiator',
-                    'Heating_Mode': 'mdi:radiator',
-                    'Heating_Boost': 'mdi:radiator',
-                    'HotWater_State': 'mdi:water-pump',
-                    'HotWater_Mode': 'mdi:water-pump',
-                    'HotWater_Boost': 'mdi:water-pump',
-                    'Mode': 'mdi:eye',
-                    'Weather': 'mdi:thermometer'}
-UNIT = {
-    "Heating_CurrentTemperature": TEMP_CELSIUS,
-    "Heating_TargetTemperature": TEMP_CELSIUS,
-    "Weather": TEMP_CELSIUS,
-    "Battery": "%"
-}
+DEVICETYPE = {"hub_OnlineStatus": {'icon': 'mdi:switch', 'type': 'None'},
+              "sense_GLASS_BREAK": {'icon': "mdi:dock-window", 'type': 'None'},
+              "sense_SMOKE_CO": {'icon': "mdi:smoke-detector", 'type': 'None'},
+              "sense_DOG_BARK": {'icon': "mdi:dog", 'type': 'None'},
+              'Heating_CurrentTemperature': {'icon': 'mdi:thermometer', 'unit': TEMP_CELSIUS, 'type': 'temperature'},
+              'Heating_TargetTemperature': {'icon': 'mdi:thermometer', 'unit': TEMP_CELSIUS, 'type': 'temperature'},
+              'Heating_State': {'icon': 'mdi:radiator', 'type': 'None'},
+              'Heating_Mode': {'icon': 'mdi:radiator', 'type': 'None'},
+              'Heating_Boost': {'icon': 'mdi:radiator', 'type': 'None'},
+              'HotWater_State': {'icon': 'mdi:water-pump', 'type': 'None'},
+              'HotWater_Mode': {'icon': 'mdi:water-pump', 'type': 'None'},
+              'HotWater_Boost': {'icon': 'mdi:water-pump', 'type': 'None'},
+              'Mode': {'icon': 'mdi:eye', 'type': 'None'},
+              'Battery': {'icon': 'mdi:thermometer', 'unit': ' % ', 'type': 'battery'},
+              'Weather': {'icon': 'mdi:thermometer', 'unit': TEMP_CELSIUS, 'type': 'None'}
+              }
 
 
 async def async_setup_platform(hass, config, add_entities, discovery_info=None):
@@ -76,7 +72,8 @@ class HiveSensorEntity(HiveEntity, Entity):
                 "name": self.device["device_name"],
                 "model": self.device["device_data"]["model"],
                 "manufacturer": self.device["device_data"]["manufacturer"],
-                "sw_version": self.device["device_data"]["version"]
+                "sw_version": self.device["device_data"]["version"],
+                "via_device": (DOMAIN, self.device["parent_device"])
             }
 
     @property
@@ -85,6 +82,30 @@ class HiveSensorEntity(HiveEntity, Entity):
         if self.device["custom"] not in ("Weather", "Availability"):
             return self.device.get("device_data", {}).get("online", True)
         return True
+
+    @property
+    def device_class(self):
+        """Device class of the entity."""
+        if self.device["custom"] in ("Battery", "Mode"):
+            return DEVICETYPE[self.device["custom"]].get('type', None)
+        else:
+            return DEVICETYPE[self.device["hive_type"]].get('type', None)
+
+    @property
+    def icon(self):
+        """Return the icon to use."""
+        if self.device["custom"] == "Battery":
+            return icon_for_battery_level(battery_level=self.device["state"])
+        else:
+            return DEVICETYPE[self.device["custom"]].get('icon', self.device["hive_type"]['icon'])
+
+    @property
+    def unit_of_measurement(self):
+        """Return the unit of measurement."""
+        if self.device["custom"] in ("Battery", "Mode"):
+            return DEVICETYPE[self.device["custom"]].get('unit', None)
+        else:
+            return DEVICETYPE[self.device["hive_type"]].get('unit', None)
 
     @property
     def name(self):
@@ -100,19 +121,6 @@ class HiveSensorEntity(HiveEntity, Entity):
     def state_attributes(self):
         """Return the state attributes."""
         return self.attributes
-
-    @property
-    def unit_of_measurement(self):
-        """Return the unit of measurement."""
-        return UNIT.get(self.device["custom"], None)
-
-    @property
-    def icon(self):
-        """Return the icon to use."""
-        if self.device["custom"] == "Battery":
-            return icon_for_battery_level(battery_level=self.device["state"])
-        else:
-            return DEVICETYPE_ICONS.get(self.device["custom"])
 
     @property
     def force_update(self):

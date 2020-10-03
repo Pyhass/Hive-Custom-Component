@@ -1,11 +1,15 @@
 """Support for the Hive binary sensors."""
 from homeassistant.components.binary_sensor import BinarySensorEntity
-import homeassistant.helpers.device_registry as dr
+
 from . import DOMAIN, HiveEntity
 
-DEVICETYPE_DEVICE_CLASS = {
-    "motionsensor": "motion",
-    "contactsensor": "opening",
+DEVICETYPE = {
+    'contactsensor': {'type': 'opening'},
+    'motionsensor': {'type': 'motion'},
+    'GLASS_BREAK': {'icon': "mdi:dock-window", 'type': 'sound'},
+    'SMOKE_CO': {'icon': "mdi:smoke-detector", 'type': 'smoke'},
+    'DOG_BARK': {'icon': "mdi:dog", 'type': 'sound'},
+    'Connectivity': {'icon': 'mdi:switch', 'type': 'connectivity'}
 }
 
 
@@ -47,14 +51,18 @@ class HiveBinarySensorEntity(HiveEntity, BinarySensorEntity):
             "model": self.device["device_data"]["model"],
             "manufacturer": self.device["device_data"]["manufacturer"],
             "sw_version": self.device["device_data"]["version"],
-            "via_device": (DOMAIN, self.device["parent_device"]),
-            "battery": self.device["device_data"]["battery"]
+            "via_device": (DOMAIN, self.device["parent_device"])
         }
 
     @property
     def device_class(self):
         """Return the class of this sensor."""
-        return DEVICETYPE_DEVICE_CLASS.get(self.device["hive_type"])
+        return DEVICETYPE.get(self.device["hive_type"])['type']
+
+    @property
+    def icon(self):
+        """Return the class of this sensor."""
+        return DEVICETYPE.get(self.device["hive_type"]).get('icon', None)
 
     @property
     def name(self):
@@ -63,7 +71,7 @@ class HiveBinarySensorEntity(HiveEntity, BinarySensorEntity):
 
     @property
     def available(self):
-        """Return if the device is available"""
+        """Return if the device is available."""
         return self.device["device_data"]["online"]
 
     @property
