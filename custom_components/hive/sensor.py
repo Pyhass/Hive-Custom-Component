@@ -18,8 +18,8 @@ DEVICETYPE = {"hub_OnlineStatus": {'icon': 'mdi:switch', 'type': 'None'},
               "sense_GLASS_BREAK": {'icon': "mdi:dock-window", 'type': 'None'},
               "sense_SMOKE_CO": {'icon': "mdi:smoke-detector", 'type': 'None'},
               "sense_DOG_BARK": {'icon': "mdi:dog", 'type': 'None'},
-              'Heating_CurrentTemperature': {'icon': 'mdi:thermometer', 'unit': TEMP_CELSIUS, 'type': 'temperature'},
-              'Heating_TargetTemperature': {'icon': 'mdi:thermometer', 'unit': TEMP_CELSIUS, 'type': 'temperature'},
+              'CurrentTemperature': {'icon': 'mdi:thermometer', 'unit': TEMP_CELSIUS, 'type': 'temperature'},
+              'TargetTemperature': {'icon': 'mdi:thermometer', 'unit': TEMP_CELSIUS, 'type': 'temperature'},
               'Heating_State': {'icon': 'mdi:radiator', 'type': 'None'},
               'Heating_Mode': {'icon': 'mdi:radiator', 'type': 'None'},
               'Heating_Boost': {'icon': 'mdi:radiator', 'type': 'None'},
@@ -28,6 +28,7 @@ DEVICETYPE = {"hub_OnlineStatus": {'icon': 'mdi:switch', 'type': 'None'},
               'HotWater_Boost': {'icon': 'mdi:water-pump', 'type': 'None'},
               'Mode': {'icon': 'mdi:eye', 'type': 'None'},
               'Battery': {'icon': 'mdi:thermometer', 'unit': ' % ', 'type': 'battery'},
+              'Availability': {'icon': 'None', 'type': 'None'},
               'Weather': {'icon': 'mdi:thermometer', 'unit': TEMP_CELSIUS, 'type': 'None'}
               }
 
@@ -66,7 +67,7 @@ class HiveSensorEntity(HiveEntity, Entity):
     @property
     def device_info(self):
         """Return device information."""
-        if self.device["custom"] != "Weather":
+        if self.device["hive_type"] != "Weather":
             return {
                 "identifiers": {(DOMAIN, self.device["device_id"])},
                 "name": self.device["device_name"],
@@ -79,33 +80,27 @@ class HiveSensorEntity(HiveEntity, Entity):
     @property
     def available(self):
         """Return if sensor is available"""
-        if self.device["custom"] not in ("Weather", "Availability"):
+        if self.device["hive_type"] not in ("Weather", "Availability"):
             return self.device.get("device_data", {}).get("online", True)
         return True
 
     @property
     def device_class(self):
         """Device class of the entity."""
-        if self.device["custom"] in ("Battery", "Mode"):
-            return DEVICETYPE[self.device["custom"]].get('type', None)
-        else:
-            return DEVICETYPE[self.device["hive_type"]].get('type', None)
+        return DEVICETYPE[self.device["hive_type"]].get('type', None)
 
     @property
     def icon(self):
         """Return the icon to use."""
-        if self.device["custom"] == "Battery":
+        if self.device["hive_type"] == "Battery":
             return icon_for_battery_level(battery_level=self.device["state"])
         else:
-            return DEVICETYPE[self.device["custom"]].get('icon', self.device["hive_type"]['icon'])
+            return DEVICETYPE[self.device["hive_type"]]['icon']
 
     @property
     def unit_of_measurement(self):
         """Return the unit of measurement."""
-        if self.device["custom"] in ("Battery", "Mode"):
-            return DEVICETYPE[self.device["custom"]].get('unit', None)
-        else:
-            return DEVICETYPE[self.device["hive_type"]].get('unit', None)
+        return DEVICETYPE[self.device["hive_type"]].get('unit', None)
 
     @property
     def name(self):
