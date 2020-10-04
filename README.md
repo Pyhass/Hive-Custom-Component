@@ -5,6 +5,17 @@ This version will setup the Home assistant hive component, but will
 also take device attributes within the hive system and set them up 
 as individual sensors e.g `Living Room Lamp Battery Level`
 
+* Additional Sensor types.
+  * Availability - online/offline
+  * Mode - Manual/Schedule
+  * Battery Level
+  * Current Temperature - Heating/Hotwater only
+  * Target Tenperature - Heating/Hotwater only
+  * Current State - Heating/Hotwater only
+  * Boost State - Heating/Hotwater only
+
+
+
 For details on what the home assistant hive component supports please see below:
 
 [**>> Hive Component Documentation <<**](https://www.home-assistant.io/integrations/hive/)
