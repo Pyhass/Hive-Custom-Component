@@ -7,18 +7,14 @@ https://home-assistant.io/components/sensor.hive/
 
 from homeassistant.components.climate.const import (
     HVAC_MODE_AUTO, HVAC_MODE_HEAT, HVAC_MODE_OFF, PRESET_BOOST)
-from homeassistant.components.hive import DOMAIN, HiveEntity
+from . import DOMAIN, HiveEntity
 from homeassistant.const import (STATE_OFF, STATE_ON, TEMP_CELSIUS)
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.icon import icon_for_battery_level
 
 DEPENDENCIES = ['hive']
 
-DEVICETYPE = {"hub_OnlineStatus": {'icon': 'mdi:switch', 'type': 'None'},
-              "sense_GLASS_BREAK": {'icon': "mdi:dock-window", 'type': 'None'},
-              "sense_SMOKE_CO": {'icon': "mdi:smoke-detector", 'type': 'None'},
-              "sense_DOG_BARK": {'icon': "mdi:dog", 'type': 'None'},
-              'CurrentTemperature': {'icon': 'mdi:thermometer', 'unit': TEMP_CELSIUS, 'type': 'temperature'},
+DEVICETYPE = {'CurrentTemperature': {'icon': 'mdi:thermometer', 'unit': TEMP_CELSIUS, 'type': 'temperature'},
               'TargetTemperature': {'icon': 'mdi:thermometer', 'unit': TEMP_CELSIUS, 'type': 'temperature'},
               'Heating_State': {'icon': 'mdi:radiator', 'type': 'None'},
               'Heating_Mode': {'icon': 'mdi:radiator', 'type': 'None'},

@@ -64,23 +64,12 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                             # Abort an entry already exists with a created token
                             return self.async_abort(reason="already_configured")
 
-                # Create long lived token
-                token_request = await self.hive.create_token(login_token)
-
-                if token_request["original"] != 200:
-                    return self.async_abort(reason="long_lived_error")
-                else:
-                    # Store long lived token for future use.
-                    token = token_request["parsed"]["accessTokens"][0]["token"]
-                    token_id = token_request["parsed"]["accessTokens"][0]["id"]
-
-                    # Create entry.
-                    return self.async_create_entry(
-                        title=self.email_address,
-                        data={"username": self.email_address,
-                              "token": token,
-                              "token_id": token_id}
-                    )
+                return self.async_create_entry(
+                    title=self.email_address,
+                    data={"username": self.email_address,
+                          "password": self.password
+                          }
+                )
 
         # Show User Input form.
         data_schema = OrderedDict()
@@ -109,8 +98,8 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                   "password": info["password"]}
         )
 
-    @staticmethod
-    @callback
+    @ staticmethod
+    @ callback
     def async_get_options_flow(config_entry):
         """Hive options callback."""
         return HiveOptionsFlowHandler(config_entry)
