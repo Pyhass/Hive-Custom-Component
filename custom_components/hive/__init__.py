@@ -19,7 +19,6 @@ from homeassistant.helpers import aiohttp_client, config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dispatcher_send
 from homeassistant.helpers.entity import Entity
 
-REQUIREMENTS = ["pyhiveapi==2020.1b1"]
 _LOGGER = logging.getLogger(__name__)
 DOMAIN = "hive"
 SERVICES = ["heating", "hotwater", "TRV"]

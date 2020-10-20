@@ -8,6 +8,13 @@
           "username": "Email Address",
           "password": "Password"
         }
+      },
+      "2fa": {
+        "title": "Hive Two-factor Authentication.",
+        "description": "Enter your Hive authentication code.",
+        "data": {
+          "2fa": "Two-factor code"
+        }
       }
     },
     "error": {

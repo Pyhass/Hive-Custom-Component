@@ -6,10 +6,10 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.core import callback
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, CONF_SCAN_INTERVAL
+from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, CONF_SCAN_INTERVAL, CONF_
 from homeassistant.helpers import aiohttp_client
-from .const import CONFIG_ENTRY_VERSION, DOMAIN
-from pyhiveapi import Hive_Async, Session
+from .const import CONFIG_ENTRY_VERSION, DOMAIN, CONF_CODE
+from pyhiveapi import Hive_Async, Session, HiveAuth
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,6 +26,7 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         self.websession = None
         self.hive = None
+        self.hive_auth = None
         self.email_address = None
         self.password = None
 
@@ -34,35 +35,32 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
         # Login to Hive with user data.
         if user_input is not None:
-            self.websession = aiohttp_client.async_get_clientsession(self.hass)
-            self.hive = Hive_Async(self.websession)
             self.email_address = user_input[CONF_USERNAME]
             self.password = user_input[CONF_PASSWORD]
+            self.websession = aiohttp_client.async_get_clientsession(self.hass)
+            self.hive = Hive_Async(self.websession)
+            self.hive_auth = HiveAuth(
+                username=self.email_address, password=self.password)
 
-            # Login to the Hive API
-            is_login = await self.hive.login(self.email_address,
-                                             self.password)
+            c_entries = self.hass.config_entries.async_entries(DOMAIN)
+            if c_entries:
+                for entry in c_entries:
+                    c_entry_user = entry.data["username"]
+                    if self.email_address == c_entry_user:
+                        # Abort an entry already exists with a created token
+                        return self.async_abort(reason="already_configured")
+
+            # Login to the Hive.
+            resp = await self.hive_auth.login()
 
             # Check if the login was successful.
-            if is_login["original"] in (400, 401, 403):
-                errors["base"] = "failed_login"
-            elif is_login["original"] == 408:
-                errors["base"] = "login_timeout"
-            else:
-                # Login Successful
-                login_token = is_login["parsed"]["token"]
-                # Abort if token not found.
-                if not login_token:
-                    return self.async_abort(reason="login_error")
+            if resp["challengeAuth"] == "SMS":
 
+                # Complete SMS 2FA.
+                resp = await self.async_step_2fa(resp)
                 # Get token from existing entry
-                c_entries = self.hass.config_entries.async_entries(DOMAIN)
-                if c_entries:
-                    for entry in c_entries:
-                        c_entry_user = entry.data["username"]
-                        if self.email_address == c_entry_user:
-                            # Abort an entry already exists with a created token
-                            return self.async_abort(reason="already_configured")
+
+            if resp["challengeAuth"] == "":
 
                 return self.async_create_entry(
                     title=self.email_address,
@@ -70,6 +68,8 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                           "password": self.password
                           }
                 )
+            else:
+                self.async_abort(reason="already_configured")
 
         # Show User Input form.
         data_schema = OrderedDict()
@@ -78,6 +78,19 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user", data_schema=vol.Schema(data_schema), errors=errors
+        )
+
+    async def async_step_2fa(self, resp, user_input=None):
+        """Handle 2fa step."""
+        if user_input:
+            return await self.hive_auth.sms_2fa(user_input["2fa"], resp)
+
+        data_schema = OrderedDict()
+        data_schema[vol.Required(CONF_CODE)] = str
+
+        return self.async_show_form(
+            step_id="2fa",
+            data_schema=vol.Schema(data_schema)
         )
 
     async def async_step_import(self, info):
