@@ -8,16 +8,23 @@
           "username": "Email Address",
           "password": "Password"
         }
+      },
+      "2fa": {
+        "title": "Hive Two-factor Authentication.",
+        "description": "Enter your Hive authentication code.",
+        "data": {
+          "2fa": "Two-factor code"
+        }
       }
     },
     "error": {
-      "failed_login": "Failed to sign in to the Hive. Please check your username and password and try again.",
-      "login_timeout": "Credential service timed out. Please try again."
+      "invalid_user": "Failed to sign into Hive. Your email address is not recognised.",
+      "invalid_password": "Failed to sign into Hive. Incorrect password please try again.",
+      "invalid_code": "Failed to sign into Hive. Your two-factor authentication code was incoorect.",
+      "unknown": "Something has gone wrong please try again later."
     },
     "abort": {
-      "login_error": "Error signing into Hive.",
-      "long_lived_error": "Cannot create setup for Hive, please retry again.",
-      "already_configured": "Hive account already configured."
+      "already_configured": "Hive account is already configured."
     }
   },
   "options": {
@@ -25,8 +32,7 @@
       "user": {
         "title": "Options for Hive",
         "data": {
-          "scan_interval": "Scan Interval (Seconds)",
-          "ignore_devices": "Device List"
+          "scan_interval": "Scan Interval (Seconds)"
         }
       }
     }
