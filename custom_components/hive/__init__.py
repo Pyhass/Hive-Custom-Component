@@ -2,30 +2,35 @@
 from functools import wraps
 import logging
 import asyncio
-import inspect
-
 import voluptuous as vol
+from aiohttp.web_exceptions import HTTPException
 
 from homeassistant import config_entries
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     ATTR_TEMPERATURE,
-    CONF_PASSWORD,
-    CONF_SCAN_INTERVAL,
     CONF_USERNAME,
+    CONF_PASSWORD
 )
+
+from .const import DOMAIN, CONF_ADD_SENSORS
+
+
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import aiohttp_client, config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dispatcher_send
+from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity import Entity
+from datetime import datetime, timedelta
+
 
 _LOGGER = logging.getLogger(__name__)
-DOMAIN = "hive"
 SERVICES = ["heating", "hotwater", "TRV"]
 SERVICE_BOOST_HOT_WATER = "boost_hot_water"
 SERVICE_BOOST_HEATING = "boost_heating"
 ATTR_TIME_PERIOD = "time_period"
 ATTR_MODE = "on_off"
+SCAN_INTERVAL = timedelta(seconds=120)
 PLATFORMS = ["binary_sensor", "climate",
              "light", "sensor", "switch", "water_heater"]
 
@@ -134,50 +139,66 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
     session = aiohttp_client.async_get_clientsession(hass)
     hive = Hive()
     hive.session = Session(session)
-    Token = entry.data.get("token", None)
-    Username = entry.data.get("username", None)
-    Password = entry.data.get("password", None)
-    interval = entry.options.get("scan_interval", 120)
+    hive_config = dict(entry.data)
+    hive_options = dict(entry.options)
+
+    Tokens = hive_config.get("tokens", None)
+    Username = hive_config["options"].get(CONF_USERNAME)
+    Password = hive_config.get(CONF_PASSWORD)
+    Update = "Y" if datetime.now() >= datetime.strptime(entry.data.get(
+        "created"), '%Y-%m-%d %H:%M:%S.%f') + timedelta(minutes=60) else "N"
+
+    # Update config entry options
+    hive_options = hive_options if len(
+        hive_options) > 0 else hive_config["options"]
+    hass.config_entries.async_update_entry(entry, options=hive_options)
     hass.data[DOMAIN][entry.entry_id] = hive
 
-    devices = await hive.session.start_session(interval,
-                                               Token,
-                                               Username,
-                                               Password)
+    try:
+        devices = await hive.session.start_session(Tokens,
+                                                   Update,
+                                                   hive_options)
+    except HTTPException as error:
+        _LOGGER.error("Could not connect to the internet: %s", error)
+        raise PlatformNotReady() from error
 
-    hive.devices = devices
-    for component in PLATFORMS:
-        devicelist = devices.get(component)
-        if devicelist:
-            hass.async_create_task(
-                hass.config_entries.async_forward_entry_setup(entry, component)
+    if devices == "INVALID_REAUTH":
+        hass.async_create_task(
+            hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": config_entries.SOURCE_REAUTH},
+                data={"username": Username, "password": Password}
             )
-            if component == "climate":
-                hass.services.async_register(
-                    DOMAIN,
-                    SERVICE_BOOST_HEATING,
-                    heating_boost,
-                    schema=BOOST_HEATING_SCHEMA,
+        )
+    else:
+        hive.devices = devices
+        for component in PLATFORMS:
+            devicelist = devices.get(component)
+            if devicelist:
+                hass.async_create_task(
+                    hass.config_entries.async_forward_entry_setup(
+                        entry, component)
                 )
-            if component == "water_heater":
-                hass.services.async_register(
-                    DOMAIN,
-                    SERVICE_BOOST_HOT_WATER,
-                    hot_water_boost,
-                    schema=BOOST_HOT_WATER_SCHEMA,
-                )
+                if component == "climate":
+                    hass.services.async_register(
+                        DOMAIN,
+                        SERVICE_BOOST_HEATING,
+                        heating_boost,
+                        schema=BOOST_HEATING_SCHEMA,
+                    )
+                if component == "water_heater":
+                    hass.services.async_register(
+                        DOMAIN,
+                        SERVICE_BOOST_HOT_WATER,
+                        hot_water_boost,
+                        schema=BOOST_HOT_WATER_SCHEMA,
+                    )
 
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: config_entries.ConfigEntry):
     """Unload a config entry."""
-    Token_id = entry.data.get("token_id", None)
-    if Token_id is not None:
-        from pyhiveapi import Hive_Async
-        Token = entry.data.get("token", None)
-        session = aiohttp_client.async_get_clientsession(hass)
-        await Hive_Async.remove_token(Hive_Async(session), Token, Token_id)
 
     unload_ok = all(
         await asyncio.gather(

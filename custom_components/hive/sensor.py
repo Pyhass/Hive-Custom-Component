@@ -19,9 +19,9 @@ DEVICETYPE = {'CurrentTemperature': {'icon': 'mdi:thermometer', 'unit': TEMP_CEL
               'Heating_State': {'icon': 'mdi:radiator', 'type': 'None'},
               'Heating_Mode': {'icon': 'mdi:radiator', 'type': 'None'},
               'Heating_Boost': {'icon': 'mdi:radiator', 'type': 'None'},
-              'HotWater_State': {'icon': 'mdi:water-pump', 'type': 'None'},
-              'HotWater_Mode': {'icon': 'mdi:water-pump', 'type': 'None'},
-              'HotWater_Boost': {'icon': 'mdi:water-pump', 'type': 'None'},
+              'Hotwater_State': {'icon': 'mdi:water-pump', 'type': 'None'},
+              'Hotwater_Mode': {'icon': 'mdi:water-pump', 'type': 'None'},
+              'Hotwater_Boost': {'icon': 'mdi:water-pump', 'type': 'None'},
               'Mode': {'icon': 'mdi:eye', 'type': 'None'},
               'Battery': {'icon': 'mdi:thermometer', 'unit': ' % ', 'type': 'battery'},
               'Availability': {'icon': 'None', 'type': 'None'},
@@ -45,8 +45,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
     hive.heating = Heating()
     hive.hotwater = Hotwater()
     devices = hive.devices.get("sensor")
+
+    devs = []
     if devices:
-        devs = []
         for dev in devices:
             devs.append(HiveSensorEntity(hive, dev))
     async_add_entities(devs, True)
