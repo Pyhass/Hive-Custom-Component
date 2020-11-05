@@ -13,6 +13,7 @@ from homeassistant.helpers import aiohttp_client
 from . import DOMAIN, HiveEntity, refresh_system
 
 SUPPORT_FLAGS_HEATER = SUPPORT_OPERATION_MODE
+HOTWATER_NAME = 'Hotwater'
 
 HIVE_TO_HASS_STATE = {
     "SCHEDULE": STATE_ECO,
@@ -79,7 +80,7 @@ class HiveWaterHeater(HiveEntity, WaterHeaterEntity):
     @property
     def name(self):
         """Return the name of the water heater."""
-        return self.device.get("ha_name", "Hot Water")
+        return HOTWATER_NAME
 
     @property
     def available(self):

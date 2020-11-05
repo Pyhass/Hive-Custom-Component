@@ -57,8 +57,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
     hive = hass.data[DOMAIN][entry.entry_id]
     hive.heating = Heating(session)
     devices = hive.devices.get("climate")
+    devs = []
     if devices:
-        devs = []
         for dev in devices:
             devs.append(HiveClimateEntity(hive, dev))
     async_add_entities(devs, True)
