@@ -1,5 +1,6 @@
 """Support for the Hive binary sensors."""
 from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.helpers import aiohttp_client
 
 from . import DOMAIN, HiveEntity
 
@@ -24,11 +25,12 @@ async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Hive Binary Sensor based on a config entry."""
     from pyhiveapi.sensor import Sensor
 
+    session = aiohttp_client.async_get_clientsession(hass)
     hive = hass.data[DOMAIN][entry.entry_id]
-    hive.sensor = Sensor()
+    hive.sensor = Sensor(session)
     devices = hive.devices.get("binary_sensor")
+    devs = []
     if devices:
-        devs = []
         for dev in devices:
             devs.append(HiveBinarySensorEntity(hive, dev))
     async_add_entities(devs, True)

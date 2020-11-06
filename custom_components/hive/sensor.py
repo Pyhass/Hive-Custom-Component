@@ -11,6 +11,7 @@ from . import DOMAIN, HiveEntity
 from homeassistant.const import (STATE_OFF, STATE_ON, TEMP_CELSIUS)
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.icon import icon_for_battery_level
+from homeassistant.helpers import aiohttp_client
 
 DEPENDENCIES = ['hive']
 
@@ -40,10 +41,11 @@ async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Hive Sensor based on a config entry."""
     from pyhiveapi import Sensor, Heating, Hotwater
 
+    session = aiohttp_client.async_get_clientsession(hass)
     hive = hass.data[DOMAIN][entry.entry_id]
-    hive.sensor = Sensor()
-    hive.heating = Heating()
-    hive.hotwater = Hotwater()
+    hive.sensor = Sensor(session)
+    hive.heating = Heating(session)
+    hive.hotwater = Hotwater(session)
     devices = hive.devices.get("sensor")
 
     devs = []

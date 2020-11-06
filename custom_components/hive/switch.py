@@ -24,8 +24,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
     hive.action = Action(session)
     hive.switch = Plug(session)
     devices = hive.devices.get("switch")
+    devs = []
     if devices:
-        devs = []
         for dev in devices:
             devs.append(HiveDevicePlug(hive, dev))
     async_add_entities(devs, True)
