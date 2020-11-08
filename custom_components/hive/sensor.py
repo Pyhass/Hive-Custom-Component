@@ -25,8 +25,7 @@ DEVICETYPE = {'CurrentTemperature': {'icon': 'mdi:thermometer', 'unit': TEMP_CEL
               'Hotwater_Boost': {'icon': 'mdi:water-pump', 'type': 'None'},
               'Mode': {'icon': 'mdi:eye', 'type': 'None'},
               'Battery': {'icon': 'mdi:thermometer', 'unit': ' % ', 'type': 'battery'},
-              'Availability': {'icon': 'None', 'type': 'None'},
-              'Weather': {'icon': 'mdi:thermometer', 'unit': TEMP_CELSIUS, 'type': 'None'}
+              'Availability': {'icon': 'None', 'type': 'None'}
               }
 
 
@@ -66,20 +65,19 @@ class HiveSensorEntity(HiveEntity, Entity):
     @property
     def device_info(self):
         """Return device information."""
-        if self.device["hive_type"] != "Weather":
-            return {
-                "identifiers": {(DOMAIN, self.device["device_id"])},
-                "name": self.device["device_name"],
-                "model": self.device["device_data"]["model"],
-                "manufacturer": self.device["device_data"]["manufacturer"],
-                "sw_version": self.device["device_data"]["version"],
-                "via_device": (DOMAIN, self.device["parent_device"])
-            }
+        return {
+            "identifiers": {(DOMAIN, self.device["device_id"])},
+            "name": self.device["device_name"],
+            "model": self.device["device_data"]["model"],
+            "manufacturer": self.device["device_data"]["manufacturer"],
+            "sw_version": self.device["device_data"]["version"],
+            "via_device": (DOMAIN, self.device["parent_device"])
+        }
 
     @property
     def available(self):
         """Return if sensor is available"""
-        if self.device["hive_type"] not in ("Weather", "Availability"):
+        if self.device["hive_type"] not in ("sense", "Availability"):
             return self.device.get("device_data", {}).get("online", True)
         return True
 

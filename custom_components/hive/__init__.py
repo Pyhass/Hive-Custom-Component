@@ -79,8 +79,6 @@ class Hive:
     light = None
     sensor = None
     session = None
-    switch = None
-    weather = None
 
 
 async def async_setup(hass, config):
