@@ -1,7 +1,5 @@
 """Support for the Hive binary sensors."""
 from homeassistant.components.binary_sensor import BinarySensorEntity
-from homeassistant.helpers import aiohttp_client
-
 from . import DOMAIN, HiveEntity
 
 DEVICETYPE = {
@@ -23,11 +21,8 @@ async def setup_platform(hass, config, add_entities, discovery_info=None):
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Hive Binary Sensor based on a config entry."""
-    from pyhiveapi.sensor import Sensor
 
-    session = aiohttp_client.async_get_clientsession(hass)
     hive = hass.data[DOMAIN][entry.entry_id]
-    hive.sensor = Sensor(session)
     devices = hive.devices.get("binary_sensor")
     devs = []
     if devices:
@@ -74,7 +69,9 @@ class HiveBinarySensorEntity(HiveEntity, BinarySensorEntity):
     @property
     def available(self):
         """Return if the device is available."""
-        return self.device["device_data"]["online"]
+        if self.device["hive_type"] != "Connectivity":
+            return self.device["device_data"]["online"]
+        return True
 
     @property
     def device_state_attributes(self):

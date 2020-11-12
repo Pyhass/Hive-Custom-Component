@@ -7,9 +7,7 @@ from homeassistant.components.water_heater import (
     SUPPORT_OPERATION_MODE,
     WaterHeaterEntity,
 )
-from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT
-from homeassistant.helpers import aiohttp_client
-
+from homeassistant.const import TEMP_CELSIUS
 from . import DOMAIN, HiveEntity, refresh_system
 
 SUPPORT_FLAGS_HEATER = SUPPORT_OPERATION_MODE
@@ -39,14 +37,11 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Hive Hotwater based on a config entry."""
-    from pyhiveapi import Hotwater
 
-    session = aiohttp_client.async_get_clientsession(hass)
     hive = hass.data[DOMAIN][entry.entry_id]
-    hive.hotwater = Hotwater(session)
     devices = hive.devices.get("water_heater")
+    devs = []
     if devices:
-        devs = []
         for dev in devices:
             devs.append(HiveWaterHeater(hive, dev))
     async_add_entities(devs, True)

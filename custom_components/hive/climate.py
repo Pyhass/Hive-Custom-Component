@@ -13,8 +13,6 @@ from homeassistant.components.climate.const import (
     SUPPORT_TARGET_TEMPERATURE,
 )
 from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT
-from homeassistant.helpers import aiohttp_client
-
 from . import DOMAIN, HiveEntity, refresh_system
 
 HIVE_TO_HASS_STATE = {
@@ -51,11 +49,8 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Hive thermostat based on a config entry."""
-    from pyhiveapi import Heating
 
-    session = aiohttp_client.async_get_clientsession(hass)
     hive = hass.data[DOMAIN][entry.entry_id]
-    hive.heating = Heating(session)
     devices = hive.devices.get("climate")
     devs = []
     if devices:

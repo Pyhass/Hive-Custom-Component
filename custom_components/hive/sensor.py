@@ -5,13 +5,10 @@ For more details about this platform, please refer to the documentation at
 https://home-assistant.io/components/sensor.hive/
 """
 
-from homeassistant.components.climate.const import (
-    HVAC_MODE_AUTO, HVAC_MODE_HEAT, HVAC_MODE_OFF, PRESET_BOOST)
 from . import DOMAIN, HiveEntity
-from homeassistant.const import (STATE_OFF, STATE_ON, TEMP_CELSIUS)
+from homeassistant.const import (TEMP_CELSIUS)
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.icon import icon_for_battery_level
-from homeassistant.helpers import aiohttp_client
 
 DEPENDENCIES = ['hive']
 
@@ -38,13 +35,8 @@ async def async_setup_platform(hass, config, add_entities, discovery_info=None):
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Hive Sensor based on a config entry."""
-    from pyhiveapi import Sensor, Heating, Hotwater
 
-    session = aiohttp_client.async_get_clientsession(hass)
     hive = hass.data[DOMAIN][entry.entry_id]
-    hive.sensor = Sensor(session)
-    hive.heating = Heating(session)
-    hive.hotwater = Hotwater(session)
     devices = hive.devices.get("sensor")
 
     devs = []
@@ -124,24 +116,24 @@ class HiveSensorEntity(HiveEntity, Entity):
         """Update all Node data from Hive."""
         await self.hive.session.update_data(self.device)
         self.device = await self.hive.sensor.get_sensor(self.device)
-        if self.device["custom"] == "Heating_CurrentTemperature":
+        if self.device["hive_type"] == "CurrentTemperature":
             self.attributes = await self.get_current_temp_sa()
-        elif self.device["custom"] == "Heating_State":
+        elif self.device["hive_type"] == "Heating_State":
             self.attributes = await self.get_heating_state_sa()
-        elif self.device["custom"] == "Heating_Mode":
+        elif self.device["hive_type"] == "Heating_Mode":
             self.attributes = await self.get_heating_state_sa()
-        elif self.device["custom"] == "Heating_Boost":
+        elif self.device["hive_type"] == "Heating_Boost":
             s_a = {}
             if await self.hive.heating.boost(self.device) == "ON":
                 minsend = await self.hive.heating.get_boost_time(self.device)
                 s_a.update({"Boost ends in":
                             (str(minsend) + " minutes")})
             self.attributes = s_a
-        elif self.device["custom"] == "HotWater_State":
+        elif self.device["hive_type"] == "Hotwater_State":
             self.attributes = await self.get_hotwater_state_sa()
-        elif self.device["custom"] == "HotWater_Mode":
+        elif self.device["hive_type"] == "Hotwater_Mode":
             self.attributes = await self.get_hotwater_state_sa()
-        elif self.device["custom"] == "HotWater_Boost":
+        elif self.device["hive_type"] == "Hotwater_Boost":
             s_a = {}
             if await self.hive.hotwater.get_boost(self.device) == "ON":
                 endsin = await self.hive.hotwater.get_boost_time(self.device)

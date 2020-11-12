@@ -14,8 +14,6 @@ from homeassistant.components.light import (
     LightEntity,
 )
 import homeassistant.util.color as color_util
-from homeassistant.helpers import aiohttp_client
-
 from . import DOMAIN, HiveEntity, refresh_system
 
 DEPENDENCIES = ["hive"]
@@ -30,14 +28,11 @@ async def async_setup_platform(hass, config, add_entities, discovery_info=None):
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Hive Light based on a config entry."""
-    from pyhiveapi import Light
 
-    session = aiohttp_client.async_get_clientsession(hass)
     hive = hass.data[DOMAIN][entry.entry_id]
-    hive.light = Light(session)
     devices = hive.devices.get("light")
+    devs = []
     if devices:
-        devs = []
         for dev in devices:
             devs.append(HiveDeviceLight(hive, dev))
     async_add_entities(devs, True)

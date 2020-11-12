@@ -1,6 +1,5 @@
 """Support for the Hive switches."""
 from homeassistant.components.switch import SwitchEntity
-from homeassistant.helpers import aiohttp_client
 
 from . import DOMAIN, HiveEntity, refresh_system
 
@@ -16,13 +15,8 @@ async def async_setup_platform(hass, config, add_entities, discovery_info=None):
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Hive Switch based on a config entry."""
-    from pyhiveapi import Action
-    from pyhiveapi import Plug
 
-    session = aiohttp_client.async_get_clientsession(hass)
     hive = hass.data[DOMAIN][entry.entry_id]
-    hive.action = Action(session)
-    hive.switch = Plug(session)
     devices = hive.devices.get("switch")
     devs = []
     if devices:

@@ -1,7 +1,7 @@
 """Config Flow for Hive."""
 from pyhiveapi import HiveAuth, Session
 from collections import OrderedDict
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 
 import voluptuous as vol
@@ -28,6 +28,7 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self.hive_auth = None
         self.data = None
         self.tokens = None
+        self.root_source = None
 
     async def _show_setup_form(self, user_input=None, errors=None, step_id="user"):
         """Show the setup form to the user."""
@@ -72,7 +73,7 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 password=self.data[CONF_PASSWORD])
 
             # Get user from existing entry and abort if already setup
-            for entry in self._async_current_entries():
+            for entry in self._async_current_entries() and self.root_source != 'REAUTH':
                 if entry.data.get(CONF_USERNAME) == self.data[CONF_USERNAME]:
                     return self.async_abort(reason="already_configured")
 
@@ -135,6 +136,7 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_reauth(self, user_input=None):
         """"Re-Authenticate a user."""
+        self.root_source = 'REAUTH'
         return await self.async_step_user()
 
     async def async_step_import(self, import_config):

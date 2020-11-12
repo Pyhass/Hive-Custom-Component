@@ -2,6 +2,7 @@
 from functools import wraps
 import logging
 import asyncio
+import pyhiveapi
 import voluptuous as vol
 from aiohttp.web_exceptions import HTTPException
 
@@ -13,13 +14,13 @@ from homeassistant.const import (
     CONF_PASSWORD
 )
 
-from .const import DOMAIN, CONF_ADD_SENSORS
+from .const import DOMAIN
 
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import aiohttp_client, config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dispatcher_send
-from homeassistant.exceptions import PlatformNotReady
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entity import Entity
 from datetime import datetime, timedelta
 
@@ -68,17 +69,24 @@ BOOST_HOT_WATER_SCHEMA = vol.Schema(
 
 
 class Hive:
-    """Initiate Hive Session Class."""
 
-    entity_lookup = {}
-    devices = None
-    action = None
-    attributes = None
-    heating = None
-    hotwater = None
-    light = None
-    sensor = None
-    session = None
+    def __init__(self, hass=None):
+        """"""
+        self.websession = aiohttp_client.async_get_clientsession(hass)
+        self.entity_lookup = {}
+        self.devices = None
+        self.action = pyhiveapi.Action(self.websession)
+        self.attributes = pyhiveapi.Attributes()
+        self.heating = pyhiveapi.Heating(self.websession)
+        self.hotwater = pyhiveapi.Hotwater(self.websession)
+        self.light = pyhiveapi.Light(self.websession)
+        self.sensor = pyhiveapi.Sensor(self.websession)
+        self.session = pyhiveapi.Session(self.websession)
+        self.switch = pyhiveapi.Plug(self.websession)
+
+
+async def hive_data(hass):
+    return Hive(hass)
 
 
 async def async_setup(hass, config):
@@ -104,39 +112,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
     """Set up Hive from a config entry."""
     # Store an API object for your platforms to access
     # hass.data[DOMAIN][entry.entry_id] = MyApi(...)
-    from pyhiveapi import Session
 
-    async def heating_boost(service):
-        """Handle the service call."""
-        node_id = Hive.entity_lookup.get(service.data[ATTR_ENTITY_ID])
-        if not node_id:
-            # log or raise error
-            _LOGGER.error("Cannot boost entity id entered")
-            return
-
-        minutes = service.data[ATTR_TIME_PERIOD]
-        temperature = service.data[ATTR_TEMPERATURE]
-
-        await Hive.heating.turn_boost_on(node_id, minutes, temperature)
-
-    async def hot_water_boost(service):
-        """Handle the service call."""
-        node_id = Hive.entity_lookup.get(service.data[ATTR_ENTITY_ID])
-        if not node_id:
-            # log or raise error
-            _LOGGER.error("Cannot boost entity id entered")
-            return
-        minutes = service.data[ATTR_TIME_PERIOD]
-        mode = service.data[ATTR_MODE]
-
-        if mode == "on":
-            await Hive.hotwater.turn_boost_on(node_id, minutes)
-        elif mode == "off":
-            await Hive.hotwater.turn_boost_off(node_id)
-
-    session = aiohttp_client.async_get_clientsession(hass)
-    hive = Hive()
-    hive.session = Session(session)
+    hive = await hive_data(hass)
     hive_config = dict(entry.data)
     hive_options = dict(entry.options)
 
@@ -158,7 +135,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
                                                    hive_options)
     except HTTPException as error:
         _LOGGER.error("Could not connect to the internet: %s", error)
-        raise PlatformNotReady() from error
+        raise ConfigEntryNotReady() from error
 
     if devices == "INVALID_REAUTH":
         hass.async_create_task(
@@ -168,29 +145,59 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
                 data={"username": Username, "password": Password}
             )
         )
-    else:
-        hive.devices = devices
-        for component in PLATFORMS:
-            devicelist = devices.get(component)
-            if devicelist:
-                hass.async_create_task(
-                    hass.config_entries.async_forward_entry_setup(
-                        entry, component)
+
+    async def heating_boost(service_call):
+        """Handle the service call."""
+        node_id = hive.entity_lookup.get(service_call.data[ATTR_ENTITY_ID])
+        device = pyhiveapi.Hive_Helper.get_device_from_id(node_id)
+        if not node_id:
+            # log or raise error
+            _LOGGER.error("Cannot boost entity id entered")
+            return
+
+        minutes = service_call.data[ATTR_TIME_PERIOD]
+        temperature = service_call.data[ATTR_TEMPERATURE]
+
+        await hive.heating.turn_boost_on(device, minutes, temperature)
+
+    async def hot_water_boost(service_call):
+        """Handle the service call."""
+        node_id = hive.entity_lookup.get(service_call.data[ATTR_ENTITY_ID])
+        device = pyhiveapi.Hive_Helper.get_device_from_id(node_id)
+        if not node_id:
+            # log or raise error
+            _LOGGER.error("Cannot boost entity id entered")
+            return
+        minutes = service_call.data[ATTR_TIME_PERIOD]
+        mode = service_call.data[ATTR_MODE]
+
+        if mode == "on":
+            await hive.hotwater.turn_boost_on(node_id, minutes)
+        elif mode == "off":
+            await hive.hotwater.turn_boost_off(node_id)
+
+    hive.devices = devices
+    for component in PLATFORMS:
+        devicelist = devices.get(component)
+        if devicelist:
+            hass.async_create_task(
+                hass.config_entries.async_forward_entry_setup(
+                    entry, component)
+            )
+            if component == "climate":
+                hass.services.async_register(
+                    DOMAIN,
+                    SERVICE_BOOST_HEATING,
+                    heating_boost,
+                    schema=BOOST_HEATING_SCHEMA,
                 )
-                if component == "climate":
-                    hass.services.async_register(
-                        DOMAIN,
-                        SERVICE_BOOST_HEATING,
-                        heating_boost,
-                        schema=BOOST_HEATING_SCHEMA,
-                    )
-                if component == "water_heater":
-                    hass.services.async_register(
-                        DOMAIN,
-                        SERVICE_BOOST_HOT_WATER,
-                        hot_water_boost,
-                        schema=BOOST_HOT_WATER_SCHEMA,
-                    )
+            if component == "water_heater":
+                hass.services.async_register(
+                    DOMAIN,
+                    SERVICE_BOOST_HOT_WATER,
+                    hot_water_boost,
+                    schema=BOOST_HOT_WATER_SCHEMA,
+                )
 
     return True
 
