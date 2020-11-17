@@ -138,7 +138,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
         raise ConfigEntryNotReady() from error
 
     if devices == "INVALID_REAUTH":
-        hass.async_create_task(
+        return hass.async_create_task(
             hass.config_entries.flow.async_init(
                 DOMAIN,
                 context={"source": config_entries.SOURCE_REAUTH},
