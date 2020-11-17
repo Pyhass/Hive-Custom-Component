@@ -26,7 +26,7 @@ from datetime import datetime, timedelta
 
 
 _LOGGER = logging.getLogger(__name__)
-SERVICES = ["heating", "hotwater", "TRV"]
+SERVICES = ["heating", "hotwater", "trvcontrol"]
 SERVICE_BOOST_HOT_WATER = "boost_hot_water"
 SERVICE_BOOST_HEATING = "boost_heating"
 ATTR_TIME_PERIOD = "time_period"
@@ -172,9 +172,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
         mode = service_call.data[ATTR_MODE]
 
         if mode == "on":
-            await hive.hotwater.turn_boost_on(node_id, minutes)
+            await hive.hotwater.turn_boost_on(device, minutes)
         elif mode == "off":
-            await hive.hotwater.turn_boost_off(node_id)
+            await hive.hotwater.turn_boost_off(device)
 
     hive.devices = devices
     for component in PLATFORMS:
