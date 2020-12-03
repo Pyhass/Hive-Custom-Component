@@ -74,6 +74,8 @@ Once home assistant has started up there will be a notification advising that ne
 Actioning this notificatin will take you through to the integrations confgiuration where you will be
 required to complete the setup and enter a 2FA code.
 
+:warning: **Setting up this custom component via YAML does not support adding the additonal sensors.**
+
 ## Updating the integration
 Update are commited and released to github below is how to update based on your installation method.
 
