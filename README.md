@@ -68,6 +68,12 @@ hive:
   password: <Your hive Password>
 ```
 
+
+If 2FA authentication is enabled on your account there is an extra step required to autheticate.
+Once home assistant has started up there will be a notification advising that new device have dicovered.
+Actioning this notificatin will take you through to the integrations confgiuration where you will be
+required to complete the setup and enter a 2FA code.
+
 ## Updating the integration
 Update are commited and released to github below is how to update based on your installation method.
 
