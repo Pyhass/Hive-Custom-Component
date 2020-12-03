@@ -42,8 +42,6 @@ into the custom_component folder with your Home Assistant Configuration.
 If this folder does not exist it will need creating before you copy 
 the Hive folder from the release over.
 
-Finally once you have installed the Beta version using either method above you will need to setup the beta version via the UI by going to the Home Assistant configuration >> Integrations >> Add Integration >> Hive
-
 
 ## Setting up the integration
 The integration can be setup in 2 ways see below
@@ -61,9 +59,7 @@ Hive credentials and 2FA code if this is enabled, once finished Hive will be set
 Setting this component up via YAML files requires adding the below into your home assistant 
 configuration, replacing `<Your hive Username>` and `<Your hive Password>`
 with your username and password used on the [Hive](https://hivehome.com/) website.
-The scan interval is a time period set in minutes and this controls the interval
-as to how often the integration shold pull new data from hive.Once complete the
-integration will be setup and devices will be discovered and automatically added
+Once complete the integration will be setup and devices will be discovered and automatically added
 to Home Assistant.
 
 ```yaml
