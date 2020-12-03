@@ -2,6 +2,7 @@
 from homeassistant.components.switch import SwitchEntity
 
 from . import DOMAIN, HiveEntity, refresh_system
+from .const import ICONURL
 
 DEPENDENCIES = ["hive"]
 
@@ -57,6 +58,11 @@ class HiveDevicePlug(HiveEntity, SwitchEntity):
         return self.device["device_data"].get("online", True)
 
     @property
+    def entity_picture(self):
+        """Set icon for entity."""
+        return ICONURL
+
+    @property
     def device_state_attributes(self):
         """Show Device Attributes."""
         return self.attributes
@@ -64,12 +70,12 @@ class HiveDevicePlug(HiveEntity, SwitchEntity):
     @property
     def current_power_w(self):
         """Return the current power usage in W."""
-        return self.device["power_usage"]
+        return self.device["status"]["power_usage"]
 
     @property
     def is_on(self):
         """Return true if switch is on."""
-        return self.device["state"]
+        return self.device["status"]["state"]
 
     @refresh_system
     async def async_turn_on(self, **kwargs):

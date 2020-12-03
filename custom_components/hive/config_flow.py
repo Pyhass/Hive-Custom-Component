@@ -1,7 +1,7 @@
 """Config Flow for Hive."""
 from pyhiveapi import HiveAuth, Session
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 
 import voluptuous as vol
@@ -26,7 +26,7 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     def __init__(self):
         """Initialize the config flow."""
         self.hive_auth = None
-        self.data = None
+        self.data = {'options': {}}
         self.tokens = None
         self.root_source = None
 
@@ -61,8 +61,7 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
         # Login to Hive with user data.
         if user_input is not None:
-            self.data = user_input
-            self.data.update({"options": {}})
+            self.data.update(user_input)
             for k in SET_CUSTOM_OPTIONS:
                 self.data["options"].update({k: self.data[k]})
                 del self.data[k]
@@ -105,7 +104,9 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         sms_errors = {}
         result = None
 
-        if user_input:
+        if user_input and user_input["2fa"] == "0000":
+            self.tokens = await self.hive_auth.login()
+        elif user_input:
             result = await self.hive_auth.sms_2fa(user_input["2fa"], self.tokens)
 
             if result == 'INVALID_CODE':
@@ -116,13 +117,12 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 self.tokens = result
                 return await self.async_step_finish()
-        else:
-            return await self._show_setup_form(errors=sms_errors, step_id="2fa")
+
+        return await self._show_setup_form(errors=sms_errors, step_id="2fa")
 
     async def async_step_finish(self, user_input=None):
         """Finish setup and create the config entry."""
-        self.data["tokens"] = self.tokens.get(
-            "AuthenticationResult", "ERROR")
+        self.data["tokens"] = self.tokens.get("AuthenticationResult")
 
         if "AccessToken" in self.data["tokens"]:
             # Setup the config entry
@@ -142,29 +142,33 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_import(self, import_config):
         """Use auth from config (Username & Password)."""
-        self.email_address = import_config["username"]
-        self.password = import_config["password"]
+        self.data.update(import_config)
+        self.data["options"].update(
+            {'scan_interval': import_config.get('scan_interval', 120)})
+        self.data["options"].update(
+            {CONF_USERNAME: self.data[CONF_USERNAME]})
         self.hive_auth = HiveAuth(
-            username=self.email_address, password=self.password)
+            username=self.data[CONF_USERNAME],
+            password=self.data[CONF_PASSWORD])
 
         # Get user from existing entry and abort if already setup
         for entry in self._async_current_entries():
-            if entry.data.get(CONF_USERNAME) == self.email_address:
-                _LOGGER.warning(
-                    "Dupliate configuration - Please delete one of the duplicate configurations")
+            if entry.data.get(CONF_USERNAME) == self.data[CONF_USERNAME]:
                 return self.async_abort(reason="already_configured")
 
         # Login to the Hive.
-        self.data = await self.hive_auth.login()
+        self.tokens = await self.hive_auth.login()
 
-        if self.data == "INVALID_USER":
+        if self.tokens == "INVALID_USER":
             _LOGGER.error(
-                "Incorrrect username - Please update configuration and restart Home Assistant.")
+                "Incorrrect username - Please update your configuration and restart Home Assistant.")
             return self.async_abort(reason="incorrect_username")
-        elif self.data == "INVALID_PASSWORD":
+        elif self.tokens == "INVALID_PASSWORD":
             _LOGGER.error(
-                "Incorrrect password - Please update configuration and restart Home Assistant.")
+                "Incorrrect password - Please update your configuration and restart Home Assistant.")
             return self.async_abort(reason="incorrect_password")
+        elif self.tokens.get("ChallengeName") == "SMS_MFA":
+            return await self.async_step_2fa()
         else:
             return await self.async_step_finish()
 

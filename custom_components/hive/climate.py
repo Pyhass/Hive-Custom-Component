@@ -119,12 +119,12 @@ class HiveClimateEntity(HiveEntity, ClimateEntity):
 
         Need to be one of HVAC_MODE_*.
         """
-        return HIVE_TO_HASS_STATE[self.device["mode"]]
+        return HIVE_TO_HASS_STATE[self.device["status"]["mode"]]
 
     @property
     def hvac_action(self):
         """Return current HVAC action."""
-        return HIVE_TO_HASS_HVAC_ACTION[self.device["action"]]
+        return HIVE_TO_HASS_HVAC_ACTION[self.device["status"]["action"]]
 
     @property
     def temperature_unit(self):
@@ -134,12 +134,12 @@ class HiveClimateEntity(HiveEntity, ClimateEntity):
     @property
     def current_temperature(self):
         """Return the current temperature."""
-        return self.device["current_temperature"]
+        return self.device["status"]["current_temperature"]
 
     @property
     def target_temperature(self):
         """Return the target temperature."""
-        return self.device["target_temperature"]
+        return self.device["status"]["target_temperature"]
 
     @property
     def min_temp(self):
@@ -154,7 +154,7 @@ class HiveClimateEntity(HiveEntity, ClimateEntity):
     @property
     def preset_mode(self):
         """Return the current preset mode, e.g., home, away, temp."""
-        if self.device["boost"] == "ON":
+        if self.device["status"]["boost"] == "ON":
             return PRESET_BOOST
         return None
 

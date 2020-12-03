@@ -82,7 +82,7 @@ class HiveSensorEntity(HiveEntity, Entity):
     def icon(self):
         """Return the icon to use."""
         if self.device["hive_type"] == "Battery":
-            return icon_for_battery_level(battery_level=self.device["state"])
+            return icon_for_battery_level(battery_level=self.device["status"]["state"])
         else:
             return DEVICETYPE[self.device["hive_type"]]['icon']
 
@@ -99,7 +99,7 @@ class HiveSensorEntity(HiveEntity, Entity):
     @property
     def state(self):
         """Return the state of the sensor."""
-        return self.device["state"]
+        return self.device["status"]["state"]
 
     @property
     def state_attributes(self):

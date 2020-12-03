@@ -14,7 +14,7 @@
       },
       "2fa": {
         "title": "Hive Two-factor Authentication.",
-        "description": "Enter your Hive authentication code.",
+        "description": "Enter your Hive authentication code. \n \n Please enter code 0000 to request another code." ,
         "data": {
           "2fa": "Two-factor code"
         }
@@ -23,7 +23,7 @@
     "error": {
       "invalid_username": "Failed to sign into Hive. Your email address is not recognised.",
       "invalid_password": "Failed to sign into Hive. Incorrect password please try again.",
-      "invalid_code": "Failed to sign into Hive. Your two-factor authentication code was incoorect.",
+      "invalid_code": "Failed to sign into Hive. Your two-factor authentication code was incorrect.",
       "no_internet_available": "An internet connection is required to connect to Hive."
       
     },

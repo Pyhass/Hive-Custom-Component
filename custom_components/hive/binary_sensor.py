@@ -81,7 +81,7 @@ class HiveBinarySensorEntity(HiveEntity, BinarySensorEntity):
     @property
     def is_on(self):
         """Return true if the binary sensor is on."""
-        return self.device["state"]
+        return self.device["status"]["state"]
 
     async def async_update(self):
         """Update all Node data from Hive."""

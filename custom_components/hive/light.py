@@ -76,7 +76,7 @@ class HiveDeviceLight(HiveEntity, LightEntity):
     @property
     def brightness(self):
         """Brightness of the light (an integer in the range 1-255)."""
-        return self.device["brightness"]
+        return self.device["status"]["brightness"]
 
     @property
     def min_mireds(self):
@@ -91,18 +91,18 @@ class HiveDeviceLight(HiveEntity, LightEntity):
     @property
     def color_temp(self):
         """Return the CT color value in mireds."""
-        return self.device.get("color_temp", None)
+        return self.device["status"].get("color_temp", None)
 
     @property
     def hs_color(self) -> tuple:
         """Return the hs color value."""
-        rgb = self.device.get("hs_color", None)
+        rgb = self.device["status"].get("hs_color", None)
         return color_util.color_RGB_to_hs(*rgb)
 
     @property
     def is_on(self):
         """Return true if light is on."""
-        return self.device["state"]
+        return self.device["status"]["state"]
 
     @refresh_system
     async def async_turn_on(self, **kwargs):
