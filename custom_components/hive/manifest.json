@@ -1,8 +1,8 @@
 {
   "domain": "hive",
   "name": "Hive",
-  "documentation": "https://github.com/Pyhive/HA-Hive-Custom-Component/",
-  "requirements": ["pyhiveapi==0.2.20.2"],
-  "dependencies": [],
+  "config_flow": true,
+  "documentation": "https://www.home-assistant.io/integrations/hive",
+  "requirements": ["pyhiveapi==0.3b21"],
   "codeowners": ["@Rendili", "@KJonline"]
 }
