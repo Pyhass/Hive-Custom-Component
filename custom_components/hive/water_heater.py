@@ -90,7 +90,7 @@ class HiveWaterHeater(HiveEntity, WaterHeaterEntity):
     @property
     def current_operation(self):
         """ Return current operation. """
-        return HIVE_TO_HASS_STATE[self.device["status"]["current_operation"]]
+        return HIVE_TO_HASS_STATE[self.device["current_operation"]]
 
     @property
     def operation_list(self):
