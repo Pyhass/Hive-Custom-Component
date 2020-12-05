@@ -3,6 +3,6 @@
   "name": "Hive",
   "config_flow": true,
   "documentation": "https://www.home-assistant.io/integrations/hive",
-  "requirements": ["pyhiveapi==0.3b21"],
+  "requirements": ["pyhiveapi==0.3b22"],
   "codeowners": ["@Rendili", "@KJonline"]
 }

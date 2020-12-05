@@ -117,35 +117,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
     hive_config = dict(entry.data)
     hive_options = dict(entry.options)
 
-    Tokens = hive_config.get("tokens", None)
-    Username = hive_config["options"].get(CONF_USERNAME)
-    Password = hive_config.get(CONF_PASSWORD)
-    Update = "Y" if datetime.now() >= datetime.strptime(entry.data.get(
-        "created"), '%Y-%m-%d %H:%M:%S.%f') + timedelta(minutes=60) else "N"
-
-    # Update config entry options
-    hive_options = hive_options if len(
-        hive_options) > 0 else hive_config["options"]
-    hass.config_entries.async_update_entry(entry, options=hive_options)
-    hass.data[DOMAIN][entry.entry_id] = hive
-
-    try:
-        devices = await hive.session.start_session(Tokens,
-                                                   Update,
-                                                   hive_options)
-    except HTTPException as error:
-        _LOGGER.error("Could not connect to the internet: %s", error)
-        raise ConfigEntryNotReady() from error
-
-    if devices == "INVALID_REAUTH":
-        return hass.async_create_task(
-            hass.config_entries.flow.async_init(
-                DOMAIN,
-                context={"source": config_entries.SOURCE_REAUTH},
-                data={"username": Username, "password": Password}
-            )
-        )
-
     async def heating_boost(service_call):
         """Handle the service call."""
         node_id = hive.entity_lookup.get(service_call.data[ATTR_ENTITY_ID])
@@ -175,6 +146,35 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
             await hive.hotwater.turn_boost_on(device, minutes)
         elif mode == "off":
             await hive.hotwater.turn_boost_off(device)
+
+    Tokens = hive_config.get("tokens", None)
+    Username = hive_config["options"].get(CONF_USERNAME)
+    Password = hive_config.get(CONF_PASSWORD)
+    Update = "Y" if datetime.now() >= datetime.strptime(entry.data.get(
+        "created"), '%Y-%m-%d %H:%M:%S.%f') + timedelta(minutes=60) else "N"
+
+    # Update config entry options
+    hive_options = hive_options if len(
+        hive_options) > 0 else hive_config["options"]
+    hass.config_entries.async_update_entry(entry, options=hive_options)
+    hass.data[DOMAIN][entry.entry_id] = hive
+
+    try:
+        devices = await hive.session.start_session(Tokens,
+                                                   Update,
+                                                   hive_config)
+    except HTTPException as error:
+        _LOGGER.error("Could not connect to the internet: %s", error)
+        raise ConfigEntryNotReady() from error
+
+    if devices == "INVALID_REAUTH":
+        return hass.async_create_task(
+            hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": config_entries.SOURCE_REAUTH},
+                data={"username": Username, "password": Password}
+            )
+        )
 
     hive.devices = devices
     for component in PLATFORMS:

@@ -58,11 +58,6 @@ class HiveDevicePlug(HiveEntity, SwitchEntity):
         return self.device["device_data"].get("online", True)
 
     @property
-    def entity_picture(self):
-        """Set icon for entity."""
-        return ICONURL
-
-    @property
     def device_state_attributes(self):
         """Show Device Attributes."""
         return self.attributes

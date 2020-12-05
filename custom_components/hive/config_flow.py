@@ -1,5 +1,5 @@
 """Config Flow for Hive."""
-from pyhiveapi import HiveAuth, Session
+from pyhiveapi import HiveAuthAsync, Session
 from collections import OrderedDict
 from datetime import datetime, timedelta
 import logging
@@ -65,9 +65,7 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             for k in SET_CUSTOM_OPTIONS:
                 self.data["options"].update({k: self.data[k]})
                 del self.data[k]
-            self.data["options"].update(
-                {CONF_USERNAME: self.data[CONF_USERNAME]})
-            self.hive_auth = HiveAuth(
+            self.hive_auth = HiveAuthAsync(
                 username=self.data[CONF_USERNAME],
                 password=self.data[CONF_PASSWORD])
 
@@ -145,9 +143,7 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self.data.update(import_config)
         self.data["options"].update(
             {'scan_interval': import_config.get('scan_interval', 120)})
-        self.data["options"].update(
-            {CONF_USERNAME: self.data[CONF_USERNAME]})
-        self.hive_auth = HiveAuth(
+        self.hive_auth = HiveAuthAsync(
             username=self.data[CONF_USERNAME],
             password=self.data[CONF_PASSWORD])
 
