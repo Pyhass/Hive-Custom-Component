@@ -10,6 +10,8 @@ from homeassistant.const import (TEMP_CELSIUS)
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.icon import icon_for_battery_level
 
+from . import DATA_HIVE, DOMAIN, HiveEntity
+
 DEPENDENCIES = ['hive']
 
 DEVICETYPE = {'CurrentTemperature': {'icon': 'mdi:thermometer', 'unit': TEMP_CELSIUS, 'type': 'temperature'},
