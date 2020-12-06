@@ -1,3 +1,6 @@
+![Pylint](https://github.com/Pyhive/HA-Hive-Custom-Component/workflows/Pylint/badge.svg)
+![CodeQL](https://github.com/Pyhive/HA-Hive-Custom-Component/workflows/CodeQL/badge.svg)
+
 # Hive Custom Component
 
 This is a custom version of the Home Assistant Hive component.
