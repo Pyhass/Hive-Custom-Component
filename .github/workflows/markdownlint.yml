@@ -1,0 +1,2 @@
+- name: Markdown Linting Action
+  uses: avto-dev/markdown-lint@v1.4.0
