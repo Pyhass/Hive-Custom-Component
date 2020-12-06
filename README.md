@@ -16,7 +16,6 @@ sensors e.g `Living Room Lamp Battery Level`
   * Boost State - Heating/Hotwater only
 
 
-
 For details on what the home assistant hive component supports please see below:
 
 [**>> Hive Component Documentation <<**](https://www.home-assistant.io/integrations/hive/)
@@ -27,15 +26,22 @@ the issues tab:
 [**>> Report issues here <<**](https://github.com/Pyhive/HA-Hive-Custom-Component/issues)
 
 
-## Installing
+## Install
+There are 2 ways to install the Hive custom component see below.
 
-I recommend that you install this component
-via [HACS](https://hacs.xyz/), that way you
-get updates automatically. But you can just
-copy and paste the files into the 
-custom component directory.
+### HACS
+The recommneded way to is to install via [HACS](https://hacs.xyz/).
+Once HACS has been installed and setup. You just need to navigate to the HACS panel and choose integrations.
+This will show and option to add an integration click it and search for Hive in the presented popup.
 
-## Setting up
+Once installation is complete please follow the [setup section](#setup) to set the Hive integration up.
+
+### Manally
+To install the Hive integration manually you need to download the [latest version](https://github.com/Pyhive/HA-Hive-Custom-Component/releases/latest).
+
+Once downloaded you will need to copy the Hive folder into the custom_components folder within your home assistant configuration, if this does not exist then the folder will need creating.
+
+## Setup
 
 This component can be setup by adding the below into your home assistant 
 configuration, replacing `<Your hive Username>` and `<Your hive Password>`
@@ -50,6 +56,8 @@ hive:
   username: <Your Username>
   password: <Your Password>
 ```
+## Update
+
 
 ## Configuring
 
