@@ -82,7 +82,14 @@ logger:
 ```
 
 ## Update
+Update instructions based on installation method.
 
+### HACS
+Hacs will auto notify you within the HACS panel that there is a pending update.
+
+### Manally
+To update to the nexter version download the [latest version](https://github.com/Pyhive/HA-Hive-Custom-Component/releases/latest) again
+and replace the current hive folder with the newly downloaded one.
 
 ## Configuring
 
