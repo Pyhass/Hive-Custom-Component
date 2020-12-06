@@ -45,7 +45,13 @@ Once installation is complete please follow the [setup section](#setup) to set t
 ## Setup
 
 ### UI
-The component can 
+The component can be setup in the Home assistant UI by doing the following actions.
+
+- 1 Navigate to the Home Assisatnt Configuration.
+- 2 Open the integrations panel.
+- 3 Click the add integrations option
+- 4 Search for Hive
+- 5 Follow onboarding insturctions to setup Hive.
 
 ### YAML
 This component can be setup by adding the below into your home assistant 
