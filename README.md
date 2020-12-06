@@ -30,7 +30,7 @@ the issues tab:
 There are 2 ways to install the Hive custom component see below.
 
 ### HACS
-The recommneded way to is to install via [HACS](https://hacs.xyz/).
+The recommended way to is to install via [HACS](https://hacs.xyz/).
 Once HACS has been installed and setup. You just need to navigate to the HACS panel and choose integrations.
 This will show and option to add an integration click it and search for Hive in the presented popup.
 
@@ -38,24 +38,49 @@ Once installation is complete please follow the [setup section](#setup) to set t
 
 ### Manally
 To install the Hive integration manually you need to download the [latest version](https://github.com/Pyhive/HA-Hive-Custom-Component/releases/latest).
-
 Once downloaded you will need to copy the Hive folder into the custom_components folder within your home assistant configuration, if this does not exist then the folder will need creating.
+
+Once installation is complete please follow the [setup section](#setup) to set the Hive integration up.
 
 ## Setup
 
+### UI
+The component can 
+
+### YAML
 This component can be setup by adding the below into your home assistant 
 configuration, replacing `<Your hive Username>` and `<Your hive Password>`
 with your username and password used on the [Hive](https://hivehome.com/) website.
-The scan interval is a time period set in minutes and this controls the interval
-as to how often the integration shold pull new data from hive.Once complete the
-integration will be setup and devices will be discovered and automatically added
-to Home Assistant.
+Once complete the integration will be setup and devices will be discovered and 
+automatically added to Home Assistant.
 
 ```yaml
 hive:
-  username: <Your Username>
-  password: <Your Password>
+  username: <Your hive Username>
+  password: <Your hive Password>
 ```
+
+## Options
+Once the integration is installed and configured with home assistant you will be able to 
+change the below options from the Home Assistant integration page.
+
+- 1 Scan Interval - 
+This determines how often the integration should communicate with Hive to retrieve new data.
+The defualt configuration is 120 seconds but can be reduced to as low as 15 seconds.
+
+- 2 Debug Categories - 
+This give you the flex ability to switch on debugging mode for individual categories e.g. Lights, Switches
+It is switched off by default but can be enabled by updating the options withn the home assistant integrations page.
+Home Assistant also neeeds to know that you want to debug the system so the below YAML will need to be added also.
+
+```yaml
+logger:
+  default: warning
+  logs:
+    custom_components.hive: debug
+    pyhiveapi: debug
+```
+
 ## Update
 
 
