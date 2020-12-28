@@ -2,10 +2,8 @@
 from functools import wraps
 import logging
 import asyncio
-import pyhiveapi
 import voluptuous as vol
 from aiohttp.web_exceptions import HTTPException
-
 from homeassistant import config_entries
 from homeassistant.const import (
     ATTR_ENTITY_ID,
@@ -15,14 +13,12 @@ from homeassistant.const import (
 )
 
 from .const import DOMAIN
-
-
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import aiohttp_client, config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dispatcher_send
+from homeassistant.helpers.entity_registry import async_entries_for_device
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entity import Entity
-from datetime import datetime, timedelta
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -31,22 +27,9 @@ SERVICE_BOOST_HOT_WATER = "boost_hot_water"
 SERVICE_BOOST_HEATING = "boost_heating"
 ATTR_TIME_PERIOD = "time_period"
 ATTR_MODE = "on_off"
-SCAN_INTERVAL = timedelta(seconds=120)
 PLATFORMS = ["binary_sensor", "climate",
              "light", "sensor", "switch", "water_heater"]
-
-CONFIG_SCHEMA = vol.Schema(
-    {
-        DOMAIN: vol.Schema(
-            {
-                vol.Required(CONF_PASSWORD): cv.string,
-                vol.Required(CONF_USERNAME): cv.string
-            }
-        )
-    },
-    extra=vol.ALLOW_EXTRA,
-)
-
+ENTITY_LOOKUP = {}
 BOOST_HEATING_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_ENTITY_ID): cv.entity_id,
@@ -68,64 +51,37 @@ BOOST_HOT_WATER_SCHEMA = vol.Schema(
 )
 
 
-class Hive:
-
-    def __init__(self, hass=None):
-        """"""
-        self.websession = aiohttp_client.async_get_clientsession(hass)
-        self.entity_lookup = {}
-        self.devices = None
-        self.action = pyhiveapi.Action(self.websession)
-        self.attributes = pyhiveapi.Attributes()
-        self.heating = pyhiveapi.Heating(self.websession)
-        self.hotwater = pyhiveapi.Hotwater(self.websession)
-        self.light = pyhiveapi.Light(self.websession)
-        self.sensor = pyhiveapi.Sensor(self.websession)
-        self.session = pyhiveapi.Session(self.websession)
-        self.switch = pyhiveapi.Plug(self.websession)
-
-
-async def hive_data(hass):
-    return Hive(hass)
-
-
 async def async_setup(hass, config):
     """Set up the Hive Component."""
     hass.data[DOMAIN] = {}
     if DOMAIN not in config:
         return True
-
-    username = config[DOMAIN][CONF_USERNAME]
-    password = config[DOMAIN][CONF_PASSWORD]
-
-    hass.async_create_task(
-        hass.config_entries.flow.async_init(
-            DOMAIN,
-            context={"source": config_entries.SOURCE_IMPORT},
-            data={"username": username, "password": password}
-        )
-    )
-    return True
+    else:
+        _LOGGER.error(
+            "YAML configuration is no longer supported - please remove configuration and setup via the UI.")
+        return False
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEntry):
     """Set up Hive from a config entry."""
     # Store an API object for your platforms to access
     # hass.data[DOMAIN][entry.entry_id] = MyApi(...)
+    from pyhiveapi import Hive
 
-    hive = await hive_data(hass)
+    websession = aiohttp_client.async_get_clientsession(hass)
+    hive = Hive(websession)
     hive_config = dict(entry.data)
     hive_options = dict(entry.options)
 
     async def heating_boost(service_call):
         """Handle the service call."""
-        node_id = hive.entity_lookup.get(service_call.data[ATTR_ENTITY_ID])
-        device = pyhiveapi.Hive_Helper.get_device_from_id(node_id)
+        node_id = ENTITY_LOOKUP.get(service_call.data[ATTR_ENTITY_ID])
         if not node_id:
             # log or raise error
             _LOGGER.error("Cannot boost entity id entered")
             return
 
+        device = hive.session.helper.get_device_from_id(node_id)
         minutes = service_call.data[ATTR_TIME_PERIOD]
         temperature = service_call.data[ATTR_TEMPERATURE]
 
@@ -133,12 +89,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
 
     async def hot_water_boost(service_call):
         """Handle the service call."""
-        node_id = hive.entity_lookup.get(service_call.data[ATTR_ENTITY_ID])
-        device = pyhiveapi.Hive_Helper.get_device_from_id(node_id)
+        node_id = ENTITY_LOOKUP.get(service_call.data[ATTR_ENTITY_ID])
         if not node_id:
             # log or raise error
             _LOGGER.error("Cannot boost entity id entered")
             return
+
+        device = hive.session.helper.get_device_from_id(node_id)
         minutes = service_call.data[ATTR_TIME_PERIOD]
         mode = service_call.data[ATTR_MODE]
 
@@ -147,11 +104,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
         elif mode == "off":
             await hive.hotwater.turn_boost_off(device)
 
-    Tokens = hive_config.get("tokens", None)
     Username = hive_config["options"].get(CONF_USERNAME)
     Password = hive_config.get(CONF_PASSWORD)
-    Update = "Y" if datetime.now() >= datetime.strptime(entry.data.get(
-        "created"), '%Y-%m-%d %H:%M:%S.%f') + timedelta(minutes=60) else "N"
 
     # Update config entry options
     hive_options = hive_options if len(
@@ -161,9 +115,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
     hass.data[DOMAIN][entry.entry_id] = hive
 
     try:
-        devices = await hive.session.start_session(Tokens,
-                                                   Update,
-                                                   hive_config)
+        devices = await hive.session.startSession(hive_config)
     except HTTPException as error:
         _LOGGER.error("Could not connect to the internet: %s", error)
         raise ConfigEntryNotReady() from error
@@ -240,13 +192,48 @@ class HiveEntity(Entity):
         self.hive = hive
         self.device = hive_device
         self.attributes = {}
-        self._unique_id = f'{self.device["hive_id"]}-{self.device["hive_type"]}'
+        self._unique_id = f'{self.device["hiveID"]}-{self.device["hiveType"]}'
 
     async def async_added_to_hass(self):
         """When entity is added to Home Assistant."""
         async_dispatcher_connect(self.hass, DOMAIN, self._update_callback)
-        if self.device["hive_type"] in SERVICES:
-            self.hive.entity_lookup[self.entity_id] = self.device["hive_id"]
+        if self.device["hiveType"] in SERVICES:
+            ENTITY_LOOKUP[self.entity_id] = self.device["hiveID"]
+    
+    async def remove_item(self) -> None:
+        """Remove entity if key is part of set.
+
+        Remove entity if no entry in entity registry exist.
+        Remove entity registry entry if no entry in device registry exist.
+        Remove device registry entry if there is only one linked entity (this entity).
+        Remove entity registry entry if there are more than one entity linked to the device registry entry.
+        """
+
+        entity_registry = await self.hass.helpers.entity_registry.async_get_registry()
+        entity_entry = entity_registry.async_get(self.entity_id)
+        if not entity_entry:
+            await self.async_remove()
+            return
+
+        device_registry = await self.hass.helpers.device_registry.async_get_registry()
+        device_entry = device_registry.async_get(entity_entry.device_id)
+        if not device_entry:
+            entity_registry.async_remove(self.entity_id)
+            return
+
+        if (
+            len(
+                async_entries_for_device(
+                    entity_registry,
+                    entity_entry.device_id,
+                )
+            )
+            == 1
+        ):
+            device_registry.async_remove_device(device_entry.id)
+            return
+
+        entity_registry.async_remove(self.entity_id)
 
     @callback
     def _update_callback(self):

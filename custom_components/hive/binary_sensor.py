@@ -1,5 +1,6 @@
 """Support for the Hive binary sensors."""
 from homeassistant.components.binary_sensor import BinarySensorEntity
+from datetime import timedelta
 from . import DOMAIN, HiveEntity
 
 DEVICETYPE = {
@@ -10,6 +11,8 @@ DEVICETYPE = {
     'DOG_BARK': {'icon': "mdi:dog", 'type': 'sound'},
     'Connectivity': {'icon': 'mdi:switch', 'type': 'connectivity'}
 }
+PARALLEL_UPDATES = 0
+SCAN_INTERVAL = timedelta(seconds=15)
 
 
 async def setup_platform(hass, config, add_entities, discovery_info=None):
@@ -45,32 +48,32 @@ class HiveBinarySensorEntity(HiveEntity, BinarySensorEntity):
         return {
             "identifiers": {(DOMAIN, self.device["device_id"])},
             "name": self.device["device_name"],
-            "model": self.device["device_data"]["model"],
-            "manufacturer": self.device["device_data"]["manufacturer"],
-            "sw_version": self.device["device_data"]["version"],
-            "via_device": (DOMAIN, self.device["parent_device"])
+            "model": self.device["deviceData"]["model"],
+            "manufacturer": self.device["deviceData"]["manufacturer"],
+            "sw_version": self.device["deviceData"]["version"],
+            "via_device": (DOMAIN, self.device["parentDevice"])
         }
 
     @property
     def device_class(self):
         """Return the class of this sensor."""
-        return DEVICETYPE.get(self.device["hive_type"])['type']
+        return DEVICETYPE.get(self.device["hiveType"])['type']
 
     @property
     def icon(self):
         """Return the class of this sensor."""
-        return DEVICETYPE.get(self.device["hive_type"]).get('icon', None)
+        return DEVICETYPE.get(self.device["hiveType"]).get('icon', None)
 
     @property
     def name(self):
         """Return the name of the binary sensor."""
-        return self.device["ha_name"]
+        return self.device["haName"]
 
     @property
     def available(self):
         """Return if the device is available."""
-        if self.device["hive_type"] != "Connectivity":
-            return self.device["device_data"]["online"]
+        if self.device["hiveType"] != "Connectivity":
+            return self.device["deviceData"]["online"]
         return True
 
     @property
@@ -85,6 +88,6 @@ class HiveBinarySensorEntity(HiveEntity, BinarySensorEntity):
 
     async def async_update(self):
         """Update all Node data from Hive."""
-        await self.hive.session.update_data(self.device)
+        await self.hive.session.updateData(self.device)
         self.device = await self.hive.sensor.get_sensor(self.device)
         self.attributes = self.device.get("attributes", {})

@@ -13,6 +13,7 @@ from homeassistant.components.climate.const import (
     SUPPORT_TARGET_TEMPERATURE,
 )
 from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT
+from datetime import timedelta
 from . import DOMAIN, HiveEntity, refresh_system
 
 HIVE_TO_HASS_STATE = {
@@ -38,6 +39,8 @@ TEMP_UNIT = {"C": TEMP_CELSIUS, "F": TEMP_FAHRENHEIT}
 SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_PRESET_MODE
 SUPPORT_HVAC = [HVAC_MODE_AUTO, HVAC_MODE_HEAT, HVAC_MODE_OFF]
 SUPPORT_PRESET = [PRESET_NONE, PRESET_BOOST]
+PARALLEL_UPDATES = 0
+SCAN_INTERVAL = timedelta(seconds=15)
 
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
@@ -79,10 +82,10 @@ class HiveClimateEntity(HiveEntity, ClimateEntity):
         return {
             "identifiers": {(DOMAIN, self.device["device_id"])},
             "name": self.device["device_name"],
-            "model": self.device["device_data"]["model"],
-            "manufacturer": self.device["device_data"]["manufacturer"],
-            "sw_version": self.device["device_data"]["version"],
-            "via_device": (DOMAIN, self.device["parent_device"]),
+            "model": self.device["deviceData"]["model"],
+            "manufacturer": self.device["deviceData"]["manufacturer"],
+            "sw_version": self.device["deviceData"]["version"],
+            "via_device": (DOMAIN, self.device["parentDevice"]),
         }
 
     @property
@@ -93,12 +96,12 @@ class HiveClimateEntity(HiveEntity, ClimateEntity):
     @property
     def name(self):
         """Return the name of the Climate device."""
-        return self.device["ha_name"]
+        return self.device["haName"]
 
     @property
     def available(self):
         """Return if the device is available"""
-        return self.device["device_data"]["online"]
+        return self.device["deviceData"]["online"]
 
     @property
     def device_state_attributes(self):
@@ -188,6 +191,6 @@ class HiveClimateEntity(HiveEntity, ClimateEntity):
 
     async def async_update(self):
         """Update all Node data from Hive."""
-        await self.hive.session.update_data(self.device)
+        await self.hive.session.updateData(self.device)
         self.device = await self.hive.heating.get_heating(self.device)
         self.attributes.update(self.device.get("attributes", {}))

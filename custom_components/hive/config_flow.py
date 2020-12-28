@@ -1,7 +1,7 @@
 """Config Flow for Hive."""
 from pyhiveapi import HiveAuthAsync, Session
 from collections import OrderedDict
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 
 import voluptuous as vol
@@ -10,6 +10,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, CONF_SCAN_INTERVAL
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .const import (CONFIG_ENTRY_VERSION, DOMAIN, SET_CUSTOM_OPTIONS, CONF_CODE,
                     CONF_ADD_SENSORS, CONF_DEBUG, DEBUG_OPTIONS)
 
@@ -196,8 +197,8 @@ class HiveOptionsFlowHandler(config_entries.OptionsFlow):
                 new_interval = 15
                 user_input[CONF_SCAN_INTERVAL] = new_interval
 
-            await self.hive.log.check_debuging(user_input[CONF_DEBUG])
-            await self.hive.update_interval(new_interval)
+            await self.hive.logger.checkDebugging(user_input[CONF_DEBUG])
+            await self.hive.updateInterval(new_interval)
             return self.async_create_entry(title="", data=user_input)
 
         data_schema = OrderedDict()

@@ -8,9 +8,12 @@ https://home-assistant.io/components/sensor.hive/
 from . import DOMAIN, HiveEntity
 from homeassistant.const import (TEMP_CELSIUS)
 from homeassistant.helpers.entity import Entity
+from datetime import timedelta
 from homeassistant.helpers.icon import icon_for_battery_level
 
 DEPENDENCIES = ['hive']
+PARALLEL_UPDATES = 0
+SCAN_INTERVAL = timedelta(seconds=15)
 DEVICETYPE = {'CurrentTemperature': {'icon': 'mdi:thermometer', 'unit': TEMP_CELSIUS, 'type': 'temperature'},
               'TargetTemperature': {'icon': 'mdi:thermometer', 'unit': TEMP_CELSIUS, 'type': 'temperature'},
               'Heating_State': {'icon': 'mdi:radiator', 'type': 'None'},
@@ -59,41 +62,41 @@ class HiveSensorEntity(HiveEntity, Entity):
         return {
             "identifiers": {(DOMAIN, self.device["device_id"])},
             "name": self.device["device_name"],
-            "model": self.device["device_data"]["model"],
-            "manufacturer": self.device["device_data"]["manufacturer"],
-            "sw_version": self.device["device_data"]["version"],
-            "via_device": (DOMAIN, self.device["parent_device"])
+            "model": self.device["deviceData"]["model"],
+            "manufacturer": self.device["deviceData"]["manufacturer"],
+            "sw_version": self.device["deviceData"]["version"],
+            "via_device": (DOMAIN, self.device["parentDevice"])
         }
 
     @property
     def available(self):
         """Return if sensor is available"""
-        if self.device["hive_type"] not in ("sense", "Availability"):
-            return self.device.get("device_data", {}).get("online", True)
+        if self.device["hiveType"] not in ("sense", "Availability"):
+            return self.device.get("deviceData", {}).get("online", True)
         return True
 
     @property
     def device_class(self):
         """Device class of the entity."""
-        return DEVICETYPE[self.device["hive_type"]].get('type', None)
+        return DEVICETYPE[self.device["hiveType"]].get('type', None)
 
     @property
     def icon(self):
         """Return the icon to use."""
-        if self.device["hive_type"] == "Battery":
-            return icon_for_battery_level(battery_level=self.device["status"]["state"])
+        if self.device["hiveType"] == "Battery":
+            return icon_for_battery_level(battery_level=self.device["deviceData"]["battery"])
         else:
-            return DEVICETYPE[self.device["hive_type"]]['icon']
+            return DEVICETYPE[self.device["hiveType"]]['icon']
 
     @property
     def unit_of_measurement(self):
         """Return the unit of measurement."""
-        return DEVICETYPE[self.device["hive_type"]].get('unit', None)
+        return DEVICETYPE[self.device["hiveType"]].get('unit', None)
 
     @property
     def name(self):
         """Return the name of the sensor."""
-        return self.device["ha_name"]
+        return self.device["haName"]
 
     @property
     def state(self):
@@ -108,31 +111,31 @@ class HiveSensorEntity(HiveEntity, Entity):
     @property
     def force_update(self):
         """Return True if state updates should be forced."""
-        if self.device["custom"] in ("Heating_TargetTemperature", "Availability", "Mode", "Battery"):
+        if self.device["hiveType"] in ("TargetTemperature", "Availability", "Mode", "Battery"):
             return True
 
     async def async_update(self):
         """Update all Node data from Hive."""
-        await self.hive.session.update_data(self.device)
+        await self.hive.session.updateData(self.device)
         self.device = await self.hive.sensor.get_sensor(self.device)
-        if self.device["hive_type"] == "CurrentTemperature":
+        if self.device["hiveType"] == "CurrentTemperature":
             self.attributes = await self.get_current_temp_sa()
-        elif self.device["hive_type"] == "Heating_State":
+        elif self.device["hiveType"] == "Heating_State":
             self.attributes = await self.get_heating_state_sa()
-        elif self.device["hive_type"] == "Heating_Mode":
+        elif self.device["hiveType"] == "Heating_Mode":
             self.attributes = await self.get_heating_state_sa()
-        elif self.device["hive_type"] == "Heating_Boost":
+        elif self.device["hiveType"] == "Heating_Boost":
             s_a = {}
             if await self.hive.heating.boost(self.device) == "ON":
                 minsend = await self.hive.heating.get_boost_time(self.device)
                 s_a.update({"Boost ends in":
                             (str(minsend) + " minutes")})
             self.attributes = s_a
-        elif self.device["hive_type"] == "Hotwater_State":
+        elif self.device["hiveType"] == "Hotwater_State":
             self.attributes = await self.get_hotwater_state_sa()
-        elif self.device["hive_type"] == "Hotwater_Mode":
+        elif self.device["hiveType"] == "Hotwater_Mode":
             self.attributes = await self.get_hotwater_state_sa()
-        elif self.device["hive_type"] == "Hotwater_Boost":
+        elif self.device["hiveType"] == "Hotwater_Boost":
             s_a = {}
             if await self.hive.hotwater.get_boost(self.device) == "ON":
                 endsin = await self.hive.hotwater.get_boost_time(self.device)

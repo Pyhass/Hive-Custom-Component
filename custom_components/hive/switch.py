@@ -1,10 +1,12 @@
 """Support for the Hive switches."""
 from homeassistant.components.switch import SwitchEntity
-
+from datetime import timedelta
 from . import DOMAIN, HiveEntity, refresh_system
 from .const import ICONURL
 
 DEPENDENCIES = ["hive"]
+PARALLEL_UPDATES = 0
+SCAN_INTERVAL = timedelta(seconds=15)
 
 
 async def async_setup_platform(hass, config, add_entities, discovery_info=None):
@@ -37,25 +39,25 @@ class HiveDevicePlug(HiveEntity, SwitchEntity):
     @property
     def device_info(self):
         """Return device information."""
-        if self.device["hive_type"] == "activeplug":
+        if self.device["hiveType"] == "activeplug":
             return {
                 "identifiers": {(DOMAIN, self.device["device_id"])},
                 "name": self.device["device_name"],
-                "model": self.device["device_data"]["model"],
-                "manufacturer": self.device["device_data"]["manufacturer"],
-                "sw_version": self.device["device_data"]["version"],
-                "via_device": (DOMAIN, self.device["parent_device"])
+                "model": self.device["deviceData"]["model"],
+                "manufacturer": self.device["deviceData"]["manufacturer"],
+                "sw_version": self.device["deviceData"]["version"],
+                "via_device": (DOMAIN, self.device["parentDevice"])
             }
 
     @property
     def name(self):
         """Return the name of this Switch device if any."""
-        return self.device["ha_name"]
+        return self.device["haName"]
 
     @property
     def available(self):
         """Return if the device is available"""
-        return self.device["device_data"].get("online", True)
+        return self.device["deviceData"].get("online", True)
 
     @property
     def device_state_attributes(self):
@@ -75,24 +77,27 @@ class HiveDevicePlug(HiveEntity, SwitchEntity):
     @refresh_system
     async def async_turn_on(self, **kwargs):
         """Turn the switch on."""
-        if self.device["hive_type"] == "activeplug":
+        if self.device["hiveType"] == "activeplug":
             await self.hive.switch.turn_on(self.device)
-        elif self.device["hive_type"] == "action":
+        elif self.device["hiveType"] == "action":
             await self.hive.action.turn_on(self.device)
 
     @refresh_system
     async def async_turn_off(self, **kwargs):
         """Turn the device off."""
-        if self.device["hive_type"] == "activeplug":
+        if self.device["hiveType"] == "activeplug":
             await self.hive.switch.turn_off(self.device)
-        elif self.device["hive_type"] == "action":
+        elif self.device["hiveType"] == "action":
             await self.hive.action.turn_off(self.device)
 
     async def async_update(self):
         """Update all Node data from Hive."""
-        await self.hive.session.update_data(self.device)
-        if self.device["hive_type"] == "activeplug":
+        await self.hive.session.updateData(self.device)
+        if self.device["hiveType"] == "activeplug":
             self.device = await self.hive.switch.get_plug(self.device)
-        elif self.device["hive_type"] == "action":
+        elif self.device["hiveType"] == "action":
             self.device = await self.hive.action.get_action(self.device)
+            if self.device == 'REMOVE':
+                await self.remove_item()
+                return 
         self.attributes.update(self.device.get("attributes", {}))

@@ -7,12 +7,14 @@ from homeassistant.components.water_heater import (
     SUPPORT_OPERATION_MODE,
     WaterHeaterEntity,
 )
+from datetime import timedelta
 from homeassistant.const import TEMP_CELSIUS
 from . import DOMAIN, HiveEntity, refresh_system
 
 SUPPORT_FLAGS_HEATER = SUPPORT_OPERATION_MODE
 HOTWATER_NAME = 'Hotwater'
-
+PARALLEL_UPDATES = 0
+SCAN_INTERVAL = timedelta(seconds=15)
 HIVE_TO_HASS_STATE = {
     "SCHEDULE": STATE_ECO,
     "ON": STATE_ON,
@@ -61,10 +63,10 @@ class HiveWaterHeater(HiveEntity, WaterHeaterEntity):
         return {
             "identifiers": {(DOMAIN, self.device["device_id"])},
             "name": self.device["device_name"],
-            "model": self.device["device_data"]["model"],
-            "manufacturer": self.device["device_data"]["manufacturer"],
-            "sw_version": self.device["device_data"]["version"],
-            "via_device": (DOMAIN, self.device["parent_device"])
+            "model": self.device["deviceData"]["model"],
+            "manufacturer": self.device["deviceData"]["manufacturer"],
+            "sw_version": self.device["deviceData"]["version"],
+            "via_device": (DOMAIN, self.device["parentDevice"])
         }
 
     @property
@@ -80,7 +82,7 @@ class HiveWaterHeater(HiveEntity, WaterHeaterEntity):
     @property
     def available(self):
         """Return if the device is available"""
-        return self.device["device_data"]["online"]
+        return self.device["deviceData"]["online"]
 
     @property
     def temperature_unit(self):
@@ -98,6 +100,16 @@ class HiveWaterHeater(HiveEntity, WaterHeaterEntity):
         return SUPPORT_WATER_HEATER
 
     @refresh_system
+    async def async_turn_on(self, **kwargs):
+        """Turn on hotwater."""
+        await self.hive.hotwater.set_mode(self.device, 'MANUAL')
+
+    @refresh_system
+    async def async_turn_off(self, **kwargs):
+        """Turn on hotwater."""
+        await self.hive.hotwater.set_mode(self.device, 'OFF')
+
+    @refresh_system
     async def async_set_operation_mode(self, operation_mode):
         """Set operation mode."""
         new_mode = HASS_TO_HIVE_STATE[operation_mode]
@@ -105,6 +117,6 @@ class HiveWaterHeater(HiveEntity, WaterHeaterEntity):
 
     async def async_update(self):
         """Update all Node data from Hive."""
-        await self.hive.session.update_data(self.device)
+        await self.hive.session.updateData(self.device)
         self.device = await self.hive.hotwater.get_hotwater(self.device)
         self.attributes.update(self.device.get("attributes", {}))
