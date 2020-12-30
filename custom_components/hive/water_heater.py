@@ -12,7 +12,7 @@ from homeassistant.const import TEMP_CELSIUS
 from . import DOMAIN, HiveEntity, refresh_system
 
 SUPPORT_FLAGS_HEATER = SUPPORT_OPERATION_MODE
-HOTWATER_NAME = 'Hotwater'
+HOTWATER_NAME = 'Hot Water'
 PARALLEL_UPDATES = 0
 SCAN_INTERVAL = timedelta(seconds=15)
 HIVE_TO_HASS_STATE = {
