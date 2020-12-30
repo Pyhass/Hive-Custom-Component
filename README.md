@@ -58,20 +58,6 @@ The component can be setup in the Home assistant UI by doing the following actio
 * 4  - Search for Hive
 * 5  - Follow onboarding insturctions to setup Hive.
 
-### YAML
-
-This component can be setup by adding the below into your home assistant
-configuration, replacing `<Your hive Username>` and `<Your hive Password>`
-with your username and password used on the [Hive](https://hivehome.com/) website.
-Once complete the integration will be setup and devices will be discovered and
-automatically added to Home Assistant.
-
-```yaml
-hive:
-  username: <Your hive Username>
-  password: <Your hive Password>
-```
-
 ## Options
 
 Once the integration is installed and configured with home assistant you will be able to
@@ -79,7 +65,7 @@ change the below options from the Home Assistant integration page.
 
 * 1 - **Scan Interval**
 This determines how often the integration should communicate with Hive to retrieve new data.
-The defualt configuration is 120 seconds but can be reduced to as low as 15 seconds.
+The defualt configuration is 120 seconds but can be reduced to as low as 30 seconds.
 
 * 2 - **Debug Categories**
 This give you the flex ability to switch on debugging mode for individual categories e.g. Lights, Switches
