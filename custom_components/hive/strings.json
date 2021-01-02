@@ -14,7 +14,7 @@
       },
       "2fa": {
         "title": "Hive Two-factor Authentication.",
-        "description": "Enter your Hive authentication code. \n \n Please enter code 0000 to request another code." ,
+        "description": "Enter your Hive authentication code. \n \n Please enter code 0000 to request another code.",
         "data": {
           "2fa": "Two-factor code"
         }
@@ -25,7 +25,6 @@
       "invalid_password": "Failed to sign into Hive. Incorrect password please try again.",
       "invalid_code": "Failed to sign into Hive. Your two-factor authentication code was incorrect.",
       "no_internet_available": "An internet connection is required to connect to Hive."
-      
     },
     "abort": {
       "already_configured": "Hive account is already configured.",
@@ -38,6 +37,7 @@
     "step": {
       "user": {
         "title": "Options for Hive",
+        "description": "Update the scan interval to poll for data more often. This configuration cannot be set lower than 30 seconds",
         "data": {
           "scan_interval": "Scan Interval (Seconds)",
           "debug": "Select categories to debug"
