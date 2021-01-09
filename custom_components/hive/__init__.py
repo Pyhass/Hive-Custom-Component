@@ -81,7 +81,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
             _LOGGER.error("Cannot boost entity id entered")
             return
 
-        device = hive.session.helper.get_device_from_id(node_id)
+        device = hive.session.helper.getDeviceFromID(node_id)
         minutes = service_call.data[ATTR_TIME_PERIOD]
         temperature = service_call.data[ATTR_TEMPERATURE]
 
@@ -95,7 +95,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
             _LOGGER.error("Cannot boost entity id entered")
             return
 
-        device = hive.session.helper.get_device_from_id(node_id)
+        device = hive.session.helper.getDeviceFromID(node_id)
         minutes = service_call.data[ATTR_TIME_PERIOD]
         mode = service_call.data[ATTR_MODE]
 
@@ -199,7 +199,7 @@ class HiveEntity(Entity):
         async_dispatcher_connect(self.hass, DOMAIN, self._update_callback)
         if self.device["hiveType"] in SERVICES:
             ENTITY_LOOKUP[self.entity_id] = self.device["hiveID"]
-    
+
     async def remove_item(self) -> None:
         """Remove entity if key is part of set.
 

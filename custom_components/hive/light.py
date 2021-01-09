@@ -97,10 +97,12 @@ class HiveDeviceLight(HiveEntity, LightEntity):
         return self.device["status"].get("color_temp", None)
 
     @property
-    def hs_color(self) -> tuple:
+    def hs_color(self):
         """Return the hs color value."""
-        rgb = self.device["status"].get("hs_color", None)
-        return color_util.color_RGB_to_hs(*rgb)
+        if self.device["status"]["mode"] == "COLOUR":
+            rgb = self.device["status"].get("hs_color", None)
+            return color_util.color_RGB_to_hs(*rgb)
+        return None
 
     @property
     def is_on(self):
