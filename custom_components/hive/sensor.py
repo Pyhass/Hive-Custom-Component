@@ -5,6 +5,7 @@ For more details about this platform, please refer to the documentation at
 https://home-assistant.io/components/sensor.hive/
 """
 
+import logging
 from datetime import timedelta
 
 from homeassistant.const import TEMP_CELSIUS
@@ -12,6 +13,8 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.icon import icon_for_battery_level
 from homeassistant.components.sensor import DEVICE_CLASS_BATTERY
 
+
+_LOGGER = logging.getLogger(__name__)
 from . import HiveEntity
 from .const import DOMAIN
 
@@ -45,6 +48,7 @@ DEVICETYPE = {
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Hive thermostat based on a config entry."""
 
+    _LOGGER.error("CUSTOM COMPONENT - SENSOR - async_setup_entry - Start")
     hive = hass.data[DOMAIN][entry.entry_id]
     devices = hive.session.deviceList.get("sensor")
     entities = []

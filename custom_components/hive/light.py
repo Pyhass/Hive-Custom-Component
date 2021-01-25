@@ -1,25 +1,10 @@
 """Support for Hive light devices."""
 from datetime import timedelta
 
-from homeassistant.components.light import (
-    ATTR_BRIGHTNESS,
-    ATTR_COLOR_TEMP,
-    ATTR_HS_COLOR,
-    SUPPORT_BRIGHTNESS,
-    SUPPORT_COLOR,
-    SUPPORT_COLOR_TEMP,
-    LightEntity,
-)
-import homeassistant.util.color as color_util
 
 from . import HiveEntity, refresh_system
 from .const import ATTR_MODE, DOMAIN
 
-PARALLEL_UPDATES = 0
-SCAN_INTERVAL = timedelta(seconds=15)
-
-
-async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Hive thermostat based on a config entry."""
 
     hive = hass.data[DOMAIN][entry.entry_id]
