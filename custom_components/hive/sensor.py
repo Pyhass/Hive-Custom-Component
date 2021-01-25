@@ -5,12 +5,15 @@ For more details about this platform, please refer to the documentation at
 https://home-assistant.io/components/sensor.hive/
 """
 
+import logging
 from . import DOMAIN, HiveEntity
 from homeassistant.const import (TEMP_CELSIUS)
 from homeassistant.helpers.entity import Entity
 from datetime import timedelta
 from homeassistant.helpers.icon import icon_for_battery_level
 
+
+_LOGGER = logging.getLogger(__name__)
 DEPENDENCIES = ['hive']
 PARALLEL_UPDATES = 0
 SCAN_INTERVAL = timedelta(seconds=15)
@@ -38,8 +41,11 @@ async def async_setup_platform(hass, config, add_entities, discovery_info=None):
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Hive Sensor based on a config entry."""
 
+    _LOGGER.error("CUSTOM COMPONENT - SENSOR - async_setup_entry - Start")
     hive = hass.data[DOMAIN][entry.entry_id]
     devices = hive.devices.get("sensor")
+    
+    _LOGGER.error("CUSTOM COMPONENT - SENSOR - async_setup_entry - devices count = " + str(len(devices)))
 
     devs = []
     if devices:
