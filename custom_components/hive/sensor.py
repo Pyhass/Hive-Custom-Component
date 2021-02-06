@@ -35,7 +35,7 @@ DEVICETYPE = {
     "Hotwater_Boost": {"icon": "mdi:water-pump", "type": "None"},
     "Mode": {"icon": "mdi:eye", "type": "None"},
     "Battery": {"icon": "mdi:thermometer", "unit": " % ", "type": "battery"},
-    "Availability": {"icon": "None", "type": "None"},
+    "Availability": {"icon": "mdi:eye", "type": "None"},
 }
 
 
@@ -84,8 +84,10 @@ class HiveSensorEntity(HiveEntity, Entity):
 
     @property
     def available(self):
-        """Return if sensor is available."""
-        return self.device.get("deviceData", {}).get("online", True)
+        """Return if sensor is available"""
+        if self.device["hiveType"] not in ("sense", "Availability"):
+            return self.device.get("deviceData", {}).get("online", True)
+        return True
 
     @property
     def device_class(self):
@@ -95,9 +97,12 @@ class HiveSensorEntity(HiveEntity, Entity):
     @property
     def icon(self):
         """Return the icon to use."""
-        return icon_for_battery_level(
-            battery_level=self.device["deviceData"]["battery"]
-        )
+        if self.device["hiveType"] == "Battery":
+            return icon_for_battery_level(
+                battery_level=self.device["deviceData"]["battery"]
+            )
+        else:
+            return DEVICETYPE[self.device["hiveType"]]["icon"]
 
     @property
     def unit_of_measurement(self):
