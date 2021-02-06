@@ -179,7 +179,9 @@ class HiveClimateEntity(HiveEntity, ClimateEntity):
         """Set new target temperature."""
         new_temperature = kwargs.get(ATTR_TEMPERATURE)
         if new_temperature is not None:
-            await self.hive.heating.set_target_temperature(self.device, new_temperature)
+            await self.hive.heating.set_target_temperature(
+                self.device, new_temperature
+            )
 
     @refresh_system
     async def async_set_preset_mode(self, preset_mode):

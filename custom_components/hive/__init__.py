@@ -1,12 +1,10 @@
 """Support for the Hive devices and services."""
 import asyncio
-from functools import wraps
 import logging
+from functools import wraps
 
-from aiohttp.web_exceptions import HTTPException
-from pyhiveapi import Hive
 import voluptuous as vol
-
+from aiohttp.web_exceptions import HTTPException
 from homeassistant import config_entries
 from homeassistant.const import (
     ATTR_ENTITY_ID,
@@ -17,12 +15,14 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers import aiohttp_client, config_validation as cv
+from homeassistant.helpers import aiohttp_client
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.dispatcher import (
     async_dispatcher_connect,
     async_dispatcher_send,
 )
 from homeassistant.helpers.entity import Entity
+from pyhiveapi import Hive
 
 from .const import DOMAIN
 
@@ -32,13 +32,22 @@ SERVICE_BOOST_HOT_WATER = "boost_hot_water"
 SERVICE_BOOST_HEATING = "boost_heating"
 ATTR_TIME_PERIOD = "time_period"
 ATTR_MODE = "on_off"
-PLATFORMS = ["binary_sensor", "climate", "light", "sensor", "switch", "water_heater"]
+PLATFORMS = [
+    "binary_sensor",
+    "climate",
+    "light",
+    "sensor",
+    "switch",
+    "water_heater",
+]
 ENTITY_LOOKUP = {}
 BOOST_HEATING_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_ENTITY_ID): cv.entity_id,
         vol.Required(ATTR_TIME_PERIOD): vol.All(
-            cv.time_period, cv.positive_timedelta, lambda td: td.total_seconds() // 60
+            cv.time_period,
+            cv.positive_timedelta,
+            lambda td: td.total_seconds() // 60,
         ),
         vol.Optional(ATTR_TEMPERATURE, default="25.0"): vol.Coerce(float),
     }
@@ -48,7 +57,9 @@ BOOST_HOT_WATER_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_ENTITY_ID): cv.entity_id,
         vol.Optional(ATTR_TIME_PERIOD, default="00:30:00"): vol.All(
-            cv.time_period, cv.positive_timedelta, lambda td: td.total_seconds() // 60
+            cv.time_period,
+            cv.positive_timedelta,
+            lambda td: td.total_seconds() // 60,
         ),
         vol.Required(ATTR_MODE): cv.string,
     }
@@ -79,7 +90,9 @@ async def async_setup(hass, config):
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEntry):
+async def async_setup_entry(
+    hass: HomeAssistant, entry: config_entries.ConfigEntry
+):
     """Set up Hive from a config entry."""
     # Store an API object for your platforms to access
     # hass.data[DOMAIN][entry.entry_id] = MyApi(...)
@@ -124,7 +137,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
     password = hive_config.get(CONF_PASSWORD)
 
     # Update config entry options
-    hive_options = hive_options if len(hive_options) > 0 else hive_config["options"]
+    hive_options = (
+        hive_options if len(hive_options) > 0 else hive_config["options"]
+    )
     hive_config["options"].update(hive_options)
     hass.config_entries.async_update_entry(entry, options=hive_options)
     hass.data[DOMAIN][entry.entry_id] = hive
@@ -169,13 +184,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: config_entries.ConfigEntry):
+async def async_unload_entry(
+    hass: HomeAssistant, entry: config_entries.ConfigEntry
+):
     """Unload a config entry."""
 
     unload_ok = all(
         await asyncio.gather(
             *[
-                hass.config_entries.async_forward_entry_unload(entry, component)
+                hass.config_entries.async_forward_entry_unload(
+                    entry, component
+                )
                 for component in PLATFORMS
             ]
         )

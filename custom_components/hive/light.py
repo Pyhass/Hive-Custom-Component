@@ -6,6 +6,7 @@ https://home-assistant.io/components/light.hive/
 """
 from datetime import timedelta
 
+import homeassistant.util.color as color_util
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP,
@@ -15,7 +16,6 @@ from homeassistant.components.light import (
     SUPPORT_COLOR_TEMP,
     LightEntity,
 )
-import homeassistant.util.color as color_util
 
 from . import DOMAIN, HiveEntity, refresh_system
 
@@ -24,7 +24,9 @@ PARALLEL_UPDATES = 0
 SCAN_INTERVAL = timedelta(seconds=15)
 
 
-async def async_setup_platform(hass, config, add_entities, discovery_info=None):
+async def async_setup_platform(
+    hass, config, add_entities, discovery_info=None
+):
     """Set up the Hive Light.
 
     No longer in use.
@@ -150,7 +152,9 @@ class HiveDeviceLight(HiveEntity, LightEntity):
         elif self.device["hiveType"] == "tuneablelight":
             supported_features = SUPPORT_BRIGHTNESS | SUPPORT_COLOR_TEMP
         elif self.device["hiveType"] == "colourtuneablelight":
-            supported_features = SUPPORT_BRIGHTNESS | SUPPORT_COLOR_TEMP | SUPPORT_COLOR
+            supported_features = (
+                SUPPORT_BRIGHTNESS | SUPPORT_COLOR_TEMP | SUPPORT_COLOR
+            )
 
         return supported_features
 
