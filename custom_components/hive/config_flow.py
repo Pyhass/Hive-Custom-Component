@@ -1,29 +1,16 @@
 """Config Flow for Hive."""
-import logging
 from collections import OrderedDict
 from datetime import datetime
+import logging
 
-import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
-from homeassistant import config_entries
-from homeassistant.const import (
-    CONF_PASSWORD,
-    CONF_SCAN_INTERVAL,
-    CONF_USERNAME,
-)
-from homeassistant.core import callback
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from pyhiveapi import HiveAuthAsync, Session
+import voluptuous as vol
 
-from .const import (
-    CONF_ADD_SENSORS,
-    CONF_CODE,
-    CONF_DEBUG,
-    CONFIG_ENTRY_VERSION,
-    DEBUG_OPTIONS,
-    DOMAIN,
-    SET_CUSTOM_OPTIONS,
-)
+from homeassistant import config_entries
+from homeassistant.const import CONF_PASSWORD, CONF_SCAN_INTERVAL, CONF_USERNAME
+from homeassistant.core import callback
+
+from .const import CONF_CODE, CONFIG_ENTRY_VERSION, DOMAIN, SET_OPTIONS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,9 +29,7 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self.tokens = None
         self.root_source = None
 
-    async def _show_setup_form(
-        self, user_input=None, errors=None, step_id="user"
-    ):
+    async def _show_setup_form(self, user_input=None, errors=None, step_id="user"):
         """Show the setup form to the user."""
 
         data_schema = OrderedDict()
@@ -56,10 +41,6 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema[vol.Required(CONF_USERNAME)] = str
             data_schema[vol.Required(CONF_PASSWORD)] = str
             data_schema[vol.Optional(CONF_SCAN_INTERVAL, default=120)] = int
-            data_schema[
-                vol.Optional(CONF_DEBUG, default=[])
-            ] = cv.multi_select(DEBUG_OPTIONS)
-            data_schema[vol.Optional(CONF_ADD_SENSORS, default=True)] = bool
         elif step_id == "2fa":
             data_schema[vol.Required(CONF_CODE)] = str
 
@@ -73,23 +54,20 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         # Login to Hive with user data.
         if user_input is not None:
             self.data.update(user_input)
-            for k in SET_CUSTOM_OPTIONS:
+            for k in SET_OPTIONS:
                 self.data["options"].update({k: self.data[k]})
                 del self.data[k]
             self.hive_auth = HiveAuthAsync(
-                username=self.data[CONF_USERNAME],
-                password=self.data[CONF_PASSWORD],
+                username=self.data[CONF_USERNAME], password=self.data[CONF_PASSWORD]
             )
 
             # Get user from existing entry and abort if already setup
-            if self.root_source != "REAUTH":
-                for entry in self._async_current_entries():
-                    if (
-                        entry.data.get(CONF_USERNAME)
-                        == self.data[CONF_USERNAME]
-                    ):
-                        return self.async_abort(reason="already_configured")
-
+            for entry in self._async_current_entries():
+                if (
+                    entry.data.get(CONF_USERNAME) == self.data[CONF_USERNAME]
+                    and self.root_source != "REAUTH"
+                ):
+                    return self.async_abort(reason="already_configured")
             # Login to the Hive.
             self.tokens = await self.hive_auth.login()
 
@@ -100,14 +78,14 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "invalid_password"
             elif self.tokens == "CONNECTION_ERROR":
                 errors["base"] = "no_internet_available"
-            else:
-                # Check if SMS 2fa is required.
-                if self.tokens.get("ChallengeName") == "SMS_MFA":
-                    # Complete SMS 2FA.
-                    return await self.async_step_2fa()
-                else:
-                    # Complete the entry setup.
-                    return await self.async_step_finish()
+
+            # Check if SMS 2fa is required.
+            if self.tokens.get("ChallengeName") == "SMS_MFA":
+                # Complete SMS 2FA.
+                return await self.async_step_2fa()
+
+            # Complete the entry setup.
+            return await self.async_step_finish()
 
         # Show User Input form.
         return await self._show_setup_form(errors=errors)
@@ -120,18 +98,16 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input and user_input["2fa"] == "0000":
             self.tokens = await self.hive_auth.login()
         elif user_input:
-            result = await self.hive_auth.sms_2fa(
-                user_input["2fa"], self.tokens
-            )
+            result = await self.hive_auth.sms_2fa(user_input["2fa"], self.tokens)
 
             if result == "INVALID_CODE":
                 sms_errors["base"] = "invalid_code"
-                return await self._show_setup_form(
-                    errors=sms_errors, step_id="2fa"
-                )
-            elif result == "CONNECTION_ERROR":
+                return await self._show_setup_form(errors=sms_errors, step_id="2fa")
+
+            if result == "CONNECTION_ERROR":
                 sms_errors["base"] = "no_internet_available"
-            else:
+
+            if "AuthenticationResult" in result:
                 self.tokens = result
                 return await self.async_step_finish()
 
@@ -145,50 +121,17 @@ class HiveFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             # Setup the config entry
             self.data.update({"created": str(datetime.now())})
 
-            return self.async_create_entry(
-                title=self.data["username"], data=self.data
-            )
-        else:
-            return self.async_abort(reason="unknown")
+            return self.async_create_entry(title=self.data["username"], data=self.data)
+        return self.async_abort(reason="unknown")
 
     async def async_step_reauth(self, user_input=None):
-        """"Re-Authenticate a user."""
+        """Re Authenticate a user."""
         self.root_source = "REAUTH"
         return await self.async_step_user()
 
-    async def async_step_import(self, import_config):
-        """Use auth from config (Username & Password)."""
-        self.data.update(import_config)
-        self.data["options"].update(
-            {"scan_interval": import_config.get("scan_interval", 120)}
-        )
-        self.hive_auth = HiveAuthAsync(
-            username=self.data[CONF_USERNAME],
-            password=self.data[CONF_PASSWORD],
-        )
-
-        # Get user from existing entry and abort if already setup
-        for entry in self._async_current_entries():
-            if entry.data.get(CONF_USERNAME) == self.data[CONF_USERNAME]:
-                return self.async_abort(reason="already_configured")
-
-        # Login to the Hive.
-        self.tokens = await self.hive_auth.login()
-
-        if self.tokens == "INVALID_USER":
-            _LOGGER.error(
-                "Incorrrect username - Please update your configuration and restart Home Assistant."
-            )
-            return self.async_abort(reason="incorrect_username")
-        elif self.tokens == "INVALID_PASSWORD":
-            _LOGGER.error(
-                "Incorrrect password - Please update your configuration and restart Home Assistant."
-            )
-            return self.async_abort(reason="incorrect_password")
-        elif self.tokens.get("ChallengeName") == "SMS_MFA":
-            return await self.async_step_2fa()
-        else:
-            return await self.async_step_finish()
+    async def async_step_import(self, user_input=None):
+        """Import user."""
+        return await self.async_step_user(user_input)
 
     @staticmethod
     @callback
@@ -204,7 +147,6 @@ class HiveOptionsFlowHandler(config_entries.OptionsFlow):
         """Initialize Hive options flow."""
         self.hive = Session()
         self.interval = config_entry.options.get(CONF_SCAN_INTERVAL, 120)
-        self.debug_list = config_entry.options.get(CONF_DEBUG, [])
 
     async def async_step_init(self, user_input=None):
         """Manage the options."""
@@ -214,22 +156,14 @@ class HiveOptionsFlowHandler(config_entries.OptionsFlow):
         """Handle a flow initialized by the user."""
         if user_input is not None:
             new_interval = user_input[CONF_SCAN_INTERVAL]
-            if new_interval < 15:
-                new_interval = 15
+            if new_interval < 30:
+                new_interval = 30
                 user_input[CONF_SCAN_INTERVAL] = new_interval
 
-            await self.hive.logger.checkDebugging(user_input[CONF_DEBUG])
             await self.hive.updateInterval(new_interval)
             return self.async_create_entry(title="", data=user_input)
 
         data_schema = OrderedDict()
-        data_schema[
-            vol.Optional(CONF_SCAN_INTERVAL, default=self.interval)
-        ] = int
-        data_schema[
-            vol.Optional(CONF_DEBUG, default=self.debug_list)
-        ] = cv.multi_select(DEBUG_OPTIONS)
+        data_schema[vol.Optional(CONF_SCAN_INTERVAL, default=self.interval)] = int
 
-        return self.async_show_form(
-            step_id="user", data_schema=vol.Schema(data_schema)
-        )
+        return self.async_show_form(step_id="user", data_schema=vol.Schema(data_schema))
