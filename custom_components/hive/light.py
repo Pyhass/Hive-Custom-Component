@@ -4,6 +4,8 @@ Support for the Hive devices.
 For more details about this platform, please refer to the documentation at
 https://home-assistant.io/components/light.hive/
 """
+from datetime import timedelta
+
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP,
@@ -14,7 +16,7 @@ from homeassistant.components.light import (
     LightEntity,
 )
 import homeassistant.util.color as color_util
-from datetime import timedelta
+
 from . import DOMAIN, HiveEntity, refresh_system
 
 DEPENDENCIES = ["hive"]
@@ -58,7 +60,7 @@ class HiveDeviceLight(HiveEntity, LightEntity):
             "model": self.device["deviceData"]["model"],
             "manufacturer": self.device["deviceData"]["manufacturer"],
             "sw_version": self.device["deviceData"]["version"],
-            "via_device": (DOMAIN, self.device["parentDevice"])
+            "via_device": (DOMAIN, self.device["parentDevice"]),
         }
 
     @property
@@ -68,7 +70,7 @@ class HiveDeviceLight(HiveEntity, LightEntity):
 
     @property
     def available(self):
-        """Return if the device is available"""
+        """Return if the device is available."""
         return self.device["deviceData"]["online"]
 
     @property
@@ -130,7 +132,9 @@ class HiveDeviceLight(HiveEntity, LightEntity):
             saturation = int(get_new_color[1])
             new_color = (hue, saturation, 100)
 
-        await self.hive.light.turn_on(self.device, new_brightness, new_color_temp, new_color)
+        await self.hive.light.turn_on(
+            self.device, new_brightness, new_color_temp, new_color
+        )
 
     @refresh_system
     async def async_turn_off(self, **kwargs):

@@ -1,25 +1,30 @@
 """Support for the Hive devices and services."""
+import asyncio
 from functools import wraps
 import logging
-import asyncio
-import voluptuous as vol
+
 from aiohttp.web_exceptions import HTTPException
+from pyhiveapi import Hive
+import voluptuous as vol
+
 from homeassistant import config_entries
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     ATTR_TEMPERATURE,
+    CONF_PASSWORD,
+    CONF_SCAN_INTERVAL,
     CONF_USERNAME,
-    CONF_PASSWORD
 )
-
-from .const import DOMAIN
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import aiohttp_client, config_validation as cv
-from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dispatcher_send
-from homeassistant.helpers.entity_registry import async_entries_for_device
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import aiohttp_client, config_validation as cv
+from homeassistant.helpers.dispatcher import (
+    async_dispatcher_connect,
+    async_dispatcher_send,
+)
 from homeassistant.helpers.entity import Entity
 
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 SERVICES = ["heating", "hotwater", "trvcontrol"]
@@ -27,8 +32,7 @@ SERVICE_BOOST_HOT_WATER = "boost_hot_water"
 SERVICE_BOOST_HEATING = "boost_heating"
 ATTR_TIME_PERIOD = "time_period"
 ATTR_MODE = "on_off"
-PLATFORMS = ["binary_sensor", "climate",
-             "light", "sensor", "switch", "water_heater"]
+PLATFORMS = ["binary_sensor", "climate", "light", "sensor", "switch", "water_heater"]
 ENTITY_LOOKUP = {}
 BOOST_HEATING_SCHEMA = vol.Schema(
     {
@@ -52,21 +56,33 @@ BOOST_HOT_WATER_SCHEMA = vol.Schema(
 
 
 async def async_setup(hass, config):
-    """Set up the Hive Component."""
+    """Set up the Hive Integration."""
     hass.data[DOMAIN] = {}
+
     if DOMAIN not in config:
         return True
-    else:
-        _LOGGER.error(
-            "YAML configuration is no longer supported - please remove configuration and setup via the UI.")
-        return False
+
+    conf = config[DOMAIN]
+
+    if not hass.config_entries.async_entries(DOMAIN):
+        hass.async_create_task(
+            hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": config_entries.SOURCE_IMPORT},
+                data={
+                    CONF_USERNAME: conf[CONF_USERNAME],
+                    CONF_PASSWORD: conf[CONF_PASSWORD],
+                    CONF_SCAN_INTERVAL: conf.get(CONF_SCAN_INTERVAL, 120),
+                },
+            )
+        )
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEntry):
     """Set up Hive from a config entry."""
     # Store an API object for your platforms to access
     # hass.data[DOMAIN][entry.entry_id] = MyApi(...)
-    from pyhiveapi import Hive
 
     websession = aiohttp_client.async_get_clientsession(hass)
     hive = Hive(websession)
@@ -104,12 +120,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
         elif mode == "off":
             await hive.hotwater.turn_boost_off(device)
 
-    Username = hive_config["options"].get(CONF_USERNAME)
-    Password = hive_config.get(CONF_PASSWORD)
+    username = hive_config["options"].get(CONF_USERNAME)
+    password = hive_config.get(CONF_PASSWORD)
 
     # Update config entry options
-    hive_options = hive_options if len(
-        hive_options) > 0 else hive_config["options"]
+    hive_options = hive_options if len(hive_options) > 0 else hive_config["options"]
     hive_config["options"].update(hive_options)
     hass.config_entries.async_update_entry(entry, options=hive_options)
     hass.data[DOMAIN][entry.entry_id] = hive
@@ -125,7 +140,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
             hass.config_entries.flow.async_init(
                 DOMAIN,
                 context={"source": config_entries.SOURCE_REAUTH},
-                data={"username": Username, "password": Password}
+                data={"username": username, "password": password},
             )
         )
 
@@ -134,8 +149,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
         devicelist = devices.get(component)
         if devicelist:
             hass.async_create_task(
-                hass.config_entries.async_forward_entry_setup(
-                    entry, component)
+                hass.config_entries.async_forward_entry_setup(entry, component)
             )
             if component == "climate":
                 hass.services.async_register(
@@ -161,8 +175,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: config_entries.ConfigEn
     unload_ok = all(
         await asyncio.gather(
             *[
-                hass.config_entries.async_forward_entry_unload(
-                    entry, component)
+                hass.config_entries.async_forward_entry_unload(entry, component)
                 for component in PLATFORMS
             ]
         )
@@ -199,41 +212,6 @@ class HiveEntity(Entity):
         async_dispatcher_connect(self.hass, DOMAIN, self._update_callback)
         if self.device["hiveType"] in SERVICES:
             ENTITY_LOOKUP[self.entity_id] = self.device["hiveID"]
-
-    async def remove_item(self) -> None:
-        """Remove entity if key is part of set.
-
-        Remove entity if no entry in entity registry exist.
-        Remove entity registry entry if no entry in device registry exist.
-        Remove device registry entry if there is only one linked entity (this entity).
-        Remove entity registry entry if there are more than one entity linked to the device registry entry.
-        """
-
-        entity_registry = await self.hass.helpers.entity_registry.async_get_registry()
-        entity_entry = entity_registry.async_get(self.entity_id)
-        if not entity_entry:
-            await self.async_remove()
-            return
-
-        device_registry = await self.hass.helpers.device_registry.async_get_registry()
-        device_entry = device_registry.async_get(entity_entry.device_id)
-        if not device_entry:
-            entity_registry.async_remove(self.entity_id)
-            return
-
-        if (
-            len(
-                async_entries_for_device(
-                    entity_registry,
-                    entity_entry.device_id,
-                )
-            )
-            == 1
-        ):
-            device_registry.async_remove_device(device_entry.id)
-            return
-
-        entity_registry.async_remove(self.entity_id)
 
     @callback
     def _update_callback(self):

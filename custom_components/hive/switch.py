@@ -1,8 +1,9 @@
 """Support for the Hive switches."""
-from homeassistant.components.switch import SwitchEntity
 from datetime import timedelta
+
+from homeassistant.components.switch import SwitchEntity
+
 from . import DOMAIN, HiveEntity, refresh_system
-from .const import ICONURL
 
 DEPENDENCIES = ["hive"]
 PARALLEL_UPDATES = 0
@@ -46,7 +47,7 @@ class HiveDevicePlug(HiveEntity, SwitchEntity):
                 "model": self.device["deviceData"]["model"],
                 "manufacturer": self.device["deviceData"]["manufacturer"],
                 "sw_version": self.device["deviceData"]["version"],
-                "via_device": (DOMAIN, self.device["parentDevice"])
+                "via_device": (DOMAIN, self.device["parentDevice"]),
             }
 
     @property
@@ -56,7 +57,7 @@ class HiveDevicePlug(HiveEntity, SwitchEntity):
 
     @property
     def available(self):
-        """Return if the device is available"""
+        """Return if the device is available."""
         return self.device["deviceData"].get("online", True)
 
     @property
@@ -97,7 +98,4 @@ class HiveDevicePlug(HiveEntity, SwitchEntity):
             self.device = await self.hive.switch.get_plug(self.device)
         elif self.device["hiveType"] == "action":
             self.device = await self.hive.action.get_action(self.device)
-            if self.device == 'REMOVE':
-                await self.remove_item()
-                return 
         self.attributes.update(self.device.get("attributes", {}))

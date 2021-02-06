@@ -1,4 +1,6 @@
 """Support for the Hive climate devices."""
+from datetime import timedelta
+
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
     CURRENT_HVAC_HEAT,
@@ -13,7 +15,7 @@ from homeassistant.components.climate.const import (
     SUPPORT_TARGET_TEMPERATURE,
 )
 from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT
-from datetime import timedelta
+
 from . import DOMAIN, HiveEntity, refresh_system
 
 HIVE_TO_HASS_STATE = {
@@ -100,7 +102,7 @@ class HiveClimateEntity(HiveEntity, ClimateEntity):
 
     @property
     def available(self):
-        """Return if the device is available"""
+        """Return if the device is available."""
         return self.device["deviceData"]["online"]
 
     @property

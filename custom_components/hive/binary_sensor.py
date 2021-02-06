@@ -1,15 +1,17 @@
 """Support for the Hive binary sensors."""
-from homeassistant.components.binary_sensor import BinarySensorEntity
 from datetime import timedelta
+
+from homeassistant.components.binary_sensor import BinarySensorEntity
+
 from . import DOMAIN, HiveEntity
 
 DEVICETYPE = {
-    'contactsensor': {'type': 'opening'},
-    'motionsensor': {'type': 'motion'},
-    'GLASS_BREAK': {'icon': "mdi:dock-window", 'type': 'sound'},
-    'SMOKE_CO': {'icon': "mdi:smoke-detector", 'type': 'smoke'},
-    'DOG_BARK': {'icon': "mdi:dog", 'type': 'sound'},
-    'Connectivity': {'icon': 'mdi:switch', 'type': 'connectivity'}
+    "contactsensor": {"type": "opening"},
+    "motionsensor": {"type": "motion"},
+    "GLASS_BREAK": {"icon": "mdi:dock-window", "type": "sound"},
+    "SMOKE_CO": {"icon": "mdi:smoke-detector", "type": "smoke"},
+    "DOG_BARK": {"icon": "mdi:dog", "type": "sound"},
+    "Connectivity": {"icon": "mdi:switch", "type": "connectivity"},
 }
 PARALLEL_UPDATES = 0
 SCAN_INTERVAL = timedelta(seconds=15)
@@ -51,18 +53,18 @@ class HiveBinarySensorEntity(HiveEntity, BinarySensorEntity):
             "model": self.device["deviceData"]["model"],
             "manufacturer": self.device["deviceData"]["manufacturer"],
             "sw_version": self.device["deviceData"]["version"],
-            "via_device": (DOMAIN, self.device["parentDevice"])
+            "via_device": (DOMAIN, self.device["parentDevice"]),
         }
 
     @property
     def device_class(self):
         """Return the class of this sensor."""
-        return DEVICETYPE.get(self.device["hiveType"])['type']
+        return DEVICETYPE.get(self.device["hiveType"])["type"]
 
     @property
     def icon(self):
         """Return the class of this sensor."""
-        return DEVICETYPE.get(self.device["hiveType"]).get('icon', None)
+        return DEVICETYPE.get(self.device["hiveType"]).get("icon", None)
 
     @property
     def name(self):
