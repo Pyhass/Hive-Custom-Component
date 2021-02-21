@@ -13,4 +13,4 @@ jobs:
           # optional comment
           # comment: 'This issue was closed by #{{ pr }}.'
           # default ignore the pr merge to the default branch
-          # ignore: true
+          ignore: true
