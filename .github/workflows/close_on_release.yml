@@ -1,8 +1,8 @@
 name: Auto Close Issues
 
 on:
-  pull_request:
-    types: [closed]
+  release:
+    types: [published]
 jobs:
   close:
     runs-on: ubuntu-latest
