@@ -6,7 +6,7 @@
   "requirements": [
     "pyhiveapi==0.3.4.9"
   ],
-  "version": "2021.2.5"
+  "version": "2021.2.5",
   "codeowners": [
     "@Rendili",
     "@KJonline"
