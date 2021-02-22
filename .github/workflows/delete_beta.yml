@@ -1,8 +1,18 @@
-- name: Delete Older Releases
-  uses: dev-drprasad/delete-older-releases@v0.1.0
-  with:
-    keep_latest: 10 
-    delete_tags: true 
-    delete_tag_pattern: _b
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+name: Delete Beta Releases
+
+on:
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  "0 0 1 1 *"
+    
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dev-drprasad/delete-older-releases@v0.1.0
+        with:
+          keep_latest: 10 
+          delete_tags: true 
+          delete_tag_pattern: _b
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
