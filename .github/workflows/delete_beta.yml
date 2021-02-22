@@ -1,0 +1,8 @@
+- uses: dev-drprasad/delete-older-releases@v0.1.0
+  with:
+    repo: <owner>/<repoName> # defaults to current repo
+    keep_latest: 10 
+    delete_tags: true 
+    delete_tag_pattern: _b
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
