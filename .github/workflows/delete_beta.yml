@@ -1,9 +1,7 @@
 name: Delete Beta Releases
 
-on:
-  schedule:
-    # * is a special character in YAML so you have to quote this string
-    - cron:  "0 0 1 1 *"
+on: 
+  workflow_dispatch:
     
 jobs:
   close:
