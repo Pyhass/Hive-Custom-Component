@@ -10,8 +10,11 @@ from datetime import timedelta
 from homeassistant.const import TEMP_CELSIUS
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.icon import icon_for_battery_level
+from homeassistant.components.sensor import DEVICE_CLASS_BATTERY
 
-from . import DOMAIN, HiveEntity
+from . import HiveEntity
+from .const import DOMAIN
+
 
 DEPENDENCIES = ["hive"]
 PARALLEL_UPDATES = 0
@@ -39,27 +42,16 @@ DEVICETYPE = {
 }
 
 
-async def async_setup_platform(
-    hass, config, add_entities, discovery_info=None
-):
-    """Set up the Hive Sensor.
-
-    No longer in use.
-    """
-
-
 async def async_setup_entry(hass, entry, async_add_entities):
-    """Set up Hive Sensor based on a config entry."""
+    """Set up Hive thermostat based on a config entry."""
 
     hive = hass.data[DOMAIN][entry.entry_id]
-    devices = hive.devices.get("sensor")
-
-    devs = []
+    devices = hive.session.deviceList.get("sensor")
+    entities = []
     if devices:
         for dev in devices:
-            if dev["hiveType"] in DEVICETYPE:
-                devs.append(HiveSensorEntity(hive, dev))
-    async_add_entities(devs, True)
+            entities.append(HiveSensorEntity(hive, dev))
+    async_add_entities(entities, True)
 
 
 class HiveSensorEntity(HiveEntity, Entity):
@@ -86,13 +78,13 @@ class HiveSensorEntity(HiveEntity, Entity):
     def available(self):
         """Return if sensor is available"""
         if self.device["hiveType"] not in ("sense", "Availability"):
-            return self.device.get("deviceData", {}).get("online", True)
+            return self.device.get("deviceData", {}).get("online")
         return True
 
     @property
     def device_class(self):
         """Device class of the entity."""
-        return DEVICETYPE[self.device["hiveType"]].get("type", None)
+        return DEVICETYPE[self.device["hiveType"]].get("type")
 
     @property
     def icon(self):
@@ -107,7 +99,7 @@ class HiveSensorEntity(HiveEntity, Entity):
     @property
     def unit_of_measurement(self):
         """Return the unit of measurement."""
-        return DEVICETYPE[self.device["hiveType"]].get("unit", None)
+        return DEVICETYPE[self.device["hiveType"]].get("unit")
 
     @property
     def name(self):
@@ -138,7 +130,7 @@ class HiveSensorEntity(HiveEntity, Entity):
     async def async_update(self):
         """Update all Node data from Hive."""
         await self.hive.session.updateData(self.device)
-        self.device = await self.hive.sensor.get_sensor(self.device)
+        self.device = await self.hive.sensor.getSensor(self.device)
         if self.device["hiveType"] == "CurrentTemperature":
             self.attributes = await self.get_current_temp_sa()
         elif self.device["hiveType"] == "Heating_State":
@@ -192,9 +184,7 @@ class HiveSensorEntity(HiveEntity, Entity):
             )
 
         temp_current = await self.hive.heating.current_temperature(self.device)
-        temperature_target = await self.hive.heating.target_temperature(
-            self.device
-        )
+        temperature_target = await self.hive.heating.target_temperature(self.device)
 
         if temperature_target > temp_current:
             temperature_difference = temperature_target - temp_current
@@ -239,9 +229,7 @@ class HiveSensorEntity(HiveEntity, Entity):
                     nxtstrt = snan["next"]["Start_DateTime"].strftime("%H:%M")
                     next_end = snan["next"]["End_DateTime"].strftime("%H:%M")
 
-                    sa_string = (
-                        next_target + " : " + nxtstrt + " - " + next_end
-                    )
+                    sa_string = next_target + " : " + nxtstrt + " - " + next_end
                     s_a.update({"Next": sa_string})
 
             if "later" in snan:
@@ -267,9 +255,7 @@ class HiveSensorEntity(HiveEntity, Entity):
         """Get current hotwater state, state attributes."""
         s_a = {}
 
-        snan = await self.hive.hotwater.get_schedule_now_next_later(
-            self.device
-        )
+        snan = await self.hive.hotwater.get_schedule_now_next_later(self.device)
         if snan is not None:
             if "now" in snan:
                 if (
@@ -283,9 +269,7 @@ class HiveSensorEntity(HiveEntity, Entity):
                     now_start = snan["now"]["Start_DateTime"].strftime("%H:%M")
                     now_end = snan["now"]["End_DateTime"].strftime("%H:%M")
 
-                    sa_string = (
-                        now_status + " : " + now_start + " - " + now_end
-                    )
+                    sa_string = now_status + " : " + now_start + " - " + now_end
                     s_a.update({"Now": sa_string})
 
             if "next" in snan:
@@ -300,9 +284,7 @@ class HiveSensorEntity(HiveEntity, Entity):
                     nxtstrt = snan["next"]["Start_DateTime"].strftime("%H:%M")
                     next_end = snan["next"]["End_DateTime"].strftime("%H:%M")
 
-                    sa_string = (
-                        next_status + " : " + nxtstrt + " - " + next_end
-                    )
+                    sa_string = next_status + " : " + nxtstrt + " - " + next_end
                     s_a.update({"Next": sa_string})
             if "later" in snan:
                 if (
@@ -313,14 +295,10 @@ class HiveSensorEntity(HiveEntity, Entity):
                     and "status" in snan["later"]["value"]
                 ):
                     later_status = snan["later"]["value"]["status"]
-                    later_start = snan["later"]["Start_DateTime"].strftime(
-                        "%H:%M"
-                    )
+                    later_start = snan["later"]["Start_DateTime"].strftime("%H:%M")
                     later_end = snan["later"]["End_DateTime"].strftime("%H:%M")
 
-                    sa_string = (
-                        later_status + " : " + later_start + " - " + later_end
-                    )
+                    sa_string = later_status + " : " + later_start + " - " + later_end
                     s_a.update({"Later": sa_string})
         else:
             s_a.update({"Schedule not active": ""})

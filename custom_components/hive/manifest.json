@@ -4,9 +4,8 @@
   "config_flow": true,
   "documentation": "https://www.home-assistant.io/integrations/hive",
   "requirements": [
-    "pyhiveapi==0.3.4.11"
+    "pyhiveapi==0.3.12"
   ],
-  "version": "2021.2.5",
   "codeowners": [
     "@Rendili",
     "@KJonline"
