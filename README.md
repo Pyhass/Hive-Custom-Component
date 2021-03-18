@@ -67,19 +67,6 @@ change the below options from the Home Assistant integration page.
 This determines how often the integration should communicate with Hive to retrieve new data.
 The defualt configuration is 120 seconds but can be reduced to as low as 30 seconds.
 
-* 2 - **Debug Categories**
-This give you the flex ability to switch on debugging mode for individual categories e.g. Lights, Switches
-It is switched off by default but can be enabled by updating the options withn the home assistant integrations page.
-Home Assistant also neeeds to know that you want to debug the system so the below YAML will need to be added also.
-
-```yaml
-logger:
-  default: warning
-  logs:
-    custom_components.hive: debug
-    pyhiveapi: debug
-```
-
 ## Update
 
 Update instructions based on installation method.
