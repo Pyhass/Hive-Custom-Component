@@ -80,13 +80,5 @@ Hacs will auto notify you within the HACS panel that there is a pending update.
 To update to the next version download the [latest version](https://github.com/Pyhive/HA-Hive-Custom-Component/releases/latest) again
 and replace the current hive folder with the newly downloaded one.
 
-## Configuring
-
-This component will retreive the hive data and
-update Home Assistant every 2 minutes by default.
-This can updated in the integrations page by
-clicking the options button for the integration.
-The scan interval is configured in seconds and
-can be reduced to a minimum of 15 second intervals.
 
 :warning: **Setting up this custom version will overwrite the default integration.**
