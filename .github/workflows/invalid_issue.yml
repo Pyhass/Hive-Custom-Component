@@ -1,2 +1,0 @@
-- name: Auto close issues
-  uses: lucasbento/auto-close-issues@v1.0.2
