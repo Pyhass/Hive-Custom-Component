@@ -5,9 +5,9 @@ For more details about this platform, please refer to the documentation at
 https://home-assistant.io/components/sensor.hive/
 """
 
-import logging
 from datetime import timedelta
 
+from homeassistant.components.sensor import DEVICE_CLASS_BATTERY
 from homeassistant.const import TEMP_CELSIUS
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.icon import icon_for_battery_level
@@ -48,7 +48,6 @@ DEVICETYPE = {
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Hive thermostat based on a config entry."""
 
-    _LOGGER.error("CUSTOM COMPONENT - SENSOR - async_setup_entry - Start")
     hive = hass.data[DOMAIN][entry.entry_id]
     devices = hive.session.deviceList.get("sensor")
     entities = []
@@ -135,7 +134,7 @@ class HiveSensorEntity(HiveEntity, Entity):
         """Update all Node data from Hive."""
         await self.hive.session.updateData(self.device)
         self.device = await self.hive.sensor.getSensor(self.device)
-        if self.device["hiveType"] == "CurrentTemperature":
+        if self.device["hiveType"] == "Heating_Current_Temperature":
             self.attributes = await self.get_current_temp_sa()
         elif self.device["hiveType"] == "Heating_State":
             self.attributes = await self.get_heating_state_sa()
