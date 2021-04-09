@@ -13,9 +13,6 @@ from homeassistant.helpers.icon import icon_for_battery_level
 from homeassistant.components.sensor import DEVICE_CLASS_BATTERY
 
 
-_LOGGER = logging.getLogger(__name__)
-
-
 DEPENDENCIES = ["hive"]
 PARALLEL_UPDATES = 0
 SCAN_INTERVAL = timedelta(seconds=15)
@@ -37,7 +34,7 @@ DEVICETYPE = {
     "Hotwater_Mode": {"icon": "mdi:water-pump", "type": "None"},
     "Hotwater_Boost": {"icon": "mdi:water-pump", "type": "None"},
     "Mode": {"icon": "mdi:eye", "type": "None"},
-    "Battery": {"icon": "mdi:thermometer", "unit": " % ", "type": "battery"},
+    "Battery": {"icon": "mdi:thermometer", "unit": " % ", "type": DEVICE_CLASS_BATTERY},
     "Availability": {"icon": "None", "type": "None"},
 }
 
