@@ -6,9 +6,8 @@ We support the below versions of the Hive Custom Component.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 2020.1.x   | :white_check_mark: |
-| 2020.0.x   | :white_check_mark: |                |
-| < 2020     | :x:                |
+| > 2021.1.x   | :white_check_mark: |                |
+| < 2021     | :x:                |
 
 ## Reporting a Vulnerability
 
