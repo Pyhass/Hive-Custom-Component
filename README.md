@@ -4,21 +4,21 @@
 ![CodeQL](https://github.com/Pyhive/HA-Hive-Custom-Component/workflows/CodeQL/badge.svg)
 
 This is a custom version of the Home Assistant Hive
-component. This version will setup the Home assitant
-hive component, but will also take device attributes
-within the hive system and set them up as individual
+component. This version will setup the Home Assistant
+Hive component, but will also take device attributes
+within the Hive system and set them up as individual
 sensors e.g `Living Room Lamp Battery Level`
 
-* Additional Sensor types.
-  * Availability - online/offline
+* Additional Sensor types:
+  * Availability - Online/Offline
   * Mode - Manual/Schedule
   * Battery Level
   * Current Temperature - Heating/Hotwater only
-  * Target Tenperature - Heating/Hotwater only
+  * Target Temperature - Heating/Hotwater only
   * Current State - Heating/Hotwater only
   * Boost State - Heating/Hotwater only
 
-For details on what the home assistant hive component supports please see below:
+For details on what the Home Assistant Hive component supports, please see below:
 
 [**>> Hive Component Documentation <<**](https://www.home-assistant.io/integrations/hive/)
 
@@ -29,7 +29,7 @@ the issues tab:
 
 ## Install
 
-There are 2 ways to install the Hive custom component see below.
+There are two ways to install the Hive custom component see below.
 
 ### HACS
 
@@ -52,20 +52,20 @@ Once installation is complete please follow the [setup section](#setup) to set t
 
 The component can be setup in the Home assistant UI by doing the following actions.
 
-* 1  - Navigate to the Home Assisatnt Configuration.
-* 2  - Open the integrations panel.
-* 3  - Click the add integrations option
-* 4  - Search for Hive
-* 5  - Follow onboarding insturctions to setup Hive.
+* 1  - Navigate to the Home Assistant [Configuration](https://my.home-assistant.io/redirect/config/).
+* 2  - Open the [integrations](https://my.home-assistant.io/redirect/integrations/) panel.
+* 3  - Click the add integrations option.
+* 4  - Search for [Hive](https://my.home-assistant.io/redirect/config_flow_start/?domain=hive)
+* 5  - Follow onboarding instructions to setup Hive.
 
 ## Options
 
-Once the integration is installed and configured with home assistant you will be able to
+Once the integration is installed and configured with Home Assistant you will be able to
 change the below options from the Home Assistant integration page.
 
 * 1 - **Scan Interval**
 This determines how often the integration should communicate with Hive to retrieve new data.
-The defualt configuration is 120 seconds but can be reduced to as low as 30 seconds.
+The default configuration is 120 seconds but can be reduced to as low as 30 seconds.
 
 ## Update
 
