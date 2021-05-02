@@ -3,6 +3,7 @@
   "name": "Hive",
   "config_flow": true,
   "documentation": "https://www.home-assistant.io/integrations/hive",
+  "issue_tracker": "https://github.com/Pyhass/Hive-Custom-Component/issues",
   "version": "2021.4.0",
   "requirements": [
     "pyhiveapi==0.3.13"
