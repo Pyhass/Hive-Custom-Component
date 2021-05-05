@@ -17,12 +17,12 @@ DEPENDENCIES = ["hive"]
 PARALLEL_UPDATES = 0
 SCAN_INTERVAL = timedelta(seconds=15)
 DEVICETYPE = {
-    "CurrentTemperature": {
+    "Heating_Current_Temperature": {
         "icon": "mdi:thermometer",
         "unit": TEMP_CELSIUS,
         "type": "temperature",
     },
-    "TargetTemperature": {
+    "Heating_Target_Temperature": {
         "icon": "mdi:thermometer",
         "unit": TEMP_CELSIUS,
         "type": "temperature",
@@ -35,7 +35,7 @@ DEVICETYPE = {
     "Hotwater_Boost": {"icon": "mdi:water-pump", "type": "None"},
     "Mode": {"icon": "mdi:eye", "type": "None"},
     "Battery": {"icon": "mdi:thermometer", "unit": " % ", "type": DEVICE_CLASS_BATTERY},
-    "Availability": {"icon": "None", "type": "None"},
+    "Availability": {"icon": "mdi:check-circle", "type": "None"},
 }
 
 
@@ -137,7 +137,7 @@ class HiveSensorEntity(HiveEntity, Entity):
             self.attributes = await self.get_heating_state_sa()
         elif self.device["hiveType"] == "Heating_Boost":
             s_a = {}
-            if await self.hive.heating.getBoost(self.device) == "ON":
+            if await self.hive.heating.getBoostStatus(self.device) == "ON":
                 minsend = await self.hive.heating.getBoostTime(self.device)
                 s_a.update({"Boost ends in": (str(minsend) + " minutes")})
             self.attributes = s_a
