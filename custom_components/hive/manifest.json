@@ -6,7 +6,7 @@
   "issue_tracker": "https://github.com/Pyhass/Hive-Custom-Component/issues",
   "version": "2021.5.0",
   "requirements": [
-    "pyhiveapi==0.4.1"
+    "pyhiveapi==0.4.2"
   ],
   "codeowners": [
     "@Rendili",
