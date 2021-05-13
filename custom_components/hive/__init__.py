@@ -1,16 +1,17 @@
 """Support for the Hive devices and services."""
-from functools import wraps
+import asyncio
 import logging
+from functools import wraps
 
+import voluptuous as vol
 from aiohttp.web_exceptions import HTTPException
 from apyhiveapi import Hive
 from apyhiveapi.helper.hive_exceptions import HiveReauthRequired
-import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.const import CONF_PASSWORD, CONF_SCAN_INTERVAL, CONF_USERNAME
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers import aiohttp_client, config_validation as cv
+from homeassistant.helpers import aiohttp_client
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.dispatcher import (
     async_dispatcher_connect,
     async_dispatcher_send,
@@ -91,7 +92,15 @@ async def async_setup_entry(hass, entry):
 
 async def async_unload_entry(hass, entry):
     """Unload a config entry."""
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+    unload_ok = all(
+        await asyncio.gather(
+            *[
+                hass.config_entries.async_forward_entry_unload(entry, component)
+                for component in PLATFORMS
+            ]
+        )
+    )
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
 
