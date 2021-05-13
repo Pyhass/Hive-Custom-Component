@@ -1,8 +1,8 @@
 name: Delete Beta Releases
 
-on: 
+on:
   workflow_dispatch:
-    
+
 jobs:
   close:
     runs-on: ubuntu-latest
@@ -10,7 +10,7 @@ jobs:
       - uses: dev-drprasad/delete-older-releases@v0.2.0
         with:
           keep_latest: 1
-          delete_tags: true 
+          delete_tags: true
           delete_tag_pattern: _b
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

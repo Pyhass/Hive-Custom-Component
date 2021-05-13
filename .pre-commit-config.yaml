@@ -3,10 +3,15 @@ repos:
     rev: v2.2.0
     hooks:
       - id: seed-isort-config
-  - repo: https://github.com/pre-commit/mirrors-isort
-    rev: v5.8.0
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.8.0
     hooks:
       - id: isort
+        args: ["--profile", "black"]
+  - repo: https://github.com/PyCQA/flake8
+    rev: 3.9.2
+    hooks:
+      - id: flake8
   - repo: https://github.com/ambv/black
     rev: 21.5b1
     hooks:
@@ -15,4 +20,6 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v3.4.0
     hooks:
-      - id: flake8
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
