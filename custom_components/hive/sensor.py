@@ -5,13 +5,15 @@ For more details about this platform, please refer to the documentation at
 https://home-assistant.io/components/sensor.hive/
 """
 
-from . import DOMAIN, HiveEntity
+from datetime import timedelta
+
+from homeassistant.components.sensor import DEVICE_CLASS_BATTERY
 from homeassistant.const import TEMP_CELSIUS
 from homeassistant.helpers.entity import Entity
-from datetime import timedelta
 from homeassistant.helpers.icon import icon_for_battery_level
-from homeassistant.components.sensor import DEVICE_CLASS_BATTERY
 
+from . import HiveEntity
+from .const import DOMAIN
 
 DEPENDENCIES = ["hive"]
 PARALLEL_UPDATES = 0
@@ -43,13 +45,12 @@ async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Hive Sensor based on a config entry."""
 
     hive = hass.data[DOMAIN][entry.entry_id]
-    devices = hive.deviceList.get("sensor")
-
-    devs = []
+    devices = hive.session.deviceList.get("sensor")
+    entities = []
     if devices:
         for dev in devices:
-            devs.append(HiveSensorEntity(hive, dev))
-    async_add_entities(devs, True)
+            entities.append(HiveSensorEntity(hive, dev))
+    async_add_entities(entities, True)
 
 
 class HiveSensorEntity(HiveEntity, Entity):
@@ -76,13 +77,13 @@ class HiveSensorEntity(HiveEntity, Entity):
     def available(self):
         """Return if sensor is available"""
         if self.device["hiveType"] not in ("sense", "Availability"):
-            return self.device.get("deviceData", {}).get("online", True)
+            return self.device.get("deviceData", {}).get("online")
         return True
 
     @property
     def device_class(self):
         """Device class of the entity."""
-        return DEVICETYPE[self.device["hiveType"]].get("type", None)
+        return DEVICETYPE[self.device["hiveType"]].get("type")
 
     @property
     def icon(self):
@@ -97,7 +98,7 @@ class HiveSensorEntity(HiveEntity, Entity):
     @property
     def unit_of_measurement(self):
         """Return the unit of measurement."""
-        return DEVICETYPE[self.device["hiveType"]].get("unit", None)
+        return DEVICETYPE[self.device["hiveType"]].get("unit")
 
     @property
     def name(self):
@@ -129,7 +130,7 @@ class HiveSensorEntity(HiveEntity, Entity):
         """Update all Node data from Hive."""
         await self.hive.session.updateData(self.device)
         self.device = await self.hive.sensor.getSensor(self.device)
-        if self.device["hiveType"] == "CurrentTemperature":
+        if self.device["hiveType"] == "Heating_Current_Temperature":
             self.attributes = await self.get_current_temp_sa()
         elif self.device["hiveType"] == "Heating_State":
             self.attributes = await self.get_heating_state_sa()
@@ -181,15 +182,13 @@ class HiveSensorEntity(HiveEntity, Entity):
                 }
             )
 
-        temp_current = await self.hive.heating.currentTemperature(self.device)
-        temperature_target = await self.hive.heating.targetTemperature(self.device)
+        temp_current = await self.hive.heating.getCurrentTemperature(self.device)
+        temperature_target = await self.hive.heating.getTargetTemperature(self.device)
 
         if temperature_target > temp_current:
             temperature_difference = temperature_target - temp_current
             temperature_difference = round(temperature_difference, 2)
 
-            s_a.update({"Current Temperature": temp_current})
-            s_a.update({"Target Temperature": temperature_target})
             s_a.update({"Temperature Difference": temperature_difference})
 
         return s_a
