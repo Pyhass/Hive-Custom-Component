@@ -6,11 +6,11 @@ https://home-assistant.io/components/sensor.hive/
 """
 
 from . import DOMAIN, HiveEntity
-from homeassistant.const import TEMP_CELSIUS
+from homeassistant.const import TEMP_CELSIUS, POWER_KILO_WATT
 from homeassistant.helpers.entity import Entity
 from datetime import timedelta
 from homeassistant.helpers.icon import icon_for_battery_level
-from homeassistant.components.sensor import DEVICE_CLASS_BATTERY
+from homeassistant.components.sensor import DEVICE_CLASS_BATTERY, SensorDeviceClass
 
 
 DEPENDENCIES = ["hive"]
@@ -36,6 +36,11 @@ DEVICETYPE = {
     "Mode": {"icon": "mdi:eye", "type": "None"},
     "Battery": {"icon": "mdi:thermometer", "unit": " % ", "type": DEVICE_CLASS_BATTERY},
     "Availability": {"icon": "mdi:check-circle", "type": "None"},
+    "Power": {
+        "icon": "mdi:home-lightning-bolt-outline",
+        "type": SensorDeviceClass.POWER,
+        "unit": POWER_KILO_WATT,
+    },
 }
 
 
