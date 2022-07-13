@@ -37,15 +37,15 @@ SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
         key="Heating_Current_Temperature",
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
-        unit_of_measurement=TEMP_CELSIUS,
-        icon="mdi:thermometer"
+        native_unit_of_measurement=TEMP_CELSIUS,
+        icon="mdi:thermometer",
     ),
     SensorEntityDescription(
         key="Heating_Target_Temperature",
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
-        unit_of_measurement=TEMP_CELSIUS,
-        icon="mdi:thermometer"
+        native_unit_of_measurement=TEMP_CELSIUS,
+        icon="mdi:thermometer",
     ),
     SensorEntityDescription(
         key="Heating_State",
