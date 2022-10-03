@@ -121,7 +121,7 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
             if await self.hive.heating.getBoostStatus(self.device) == "ON":
                 minsend = await self.hive.heating.getBoostTime(self.device)
                 s_a.update({"Boost ends in": (str(minsend) + " minutes")})
-            self.attributes = s_a
+            self._attr_extra_state_attributes = s_a
         elif self.device["hiveType"] == "Hotwater_State":
             self._attr_extra_state_attributes = await self.get_hotwater_state_sa()
         elif self.device["hiveType"] == "Hotwater_Mode":
