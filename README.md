@@ -1,7 +1,8 @@
 # Hive Custom Component
 
 ![Pylint](https://github.com/Pyhive/HA-Hive-Custom-Component/workflows/Pylint/badge.svg)
-![GitHub Release](https://img.shields.io/github/v/release/Pyhive/HA-Hive-Custom-Component)
+![GitHub Release](https://img.shields.io/github/v/release/Pyhive/HA-Hive-Custom-Component?display_name=tag&logo=Github)
+
 
 
 This is a custom version of the Home Assistant Hive
