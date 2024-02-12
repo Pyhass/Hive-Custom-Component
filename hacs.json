@@ -1,12 +1,5 @@
 {
   "name": "Hive Custom Component",
   "render_readme": true,
-  "domains": [
-    "binary_sensor",
-    "climate",
-    "light",
-    "sensor",
-    "switch",
-    "water_heater"
-  ]
+  "content_in_root": false
 }
