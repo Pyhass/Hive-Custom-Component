@@ -8,7 +8,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE, POWER_WATT, TEMP_CELSIUS
+from homeassistant.const import PERCENTAGE, UnitOfPower, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -28,7 +28,7 @@ SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
     ),
     SensorEntityDescription(
         key="Power",
-        native_unit_of_measurement=POWER_WATT,
+        native_unit_of_measurement=UnitOfPower.WATT,
         state_class=SensorStateClass.MEASUREMENT,
         device_class=SensorDeviceClass.POWER,
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -37,14 +37,14 @@ SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
         key="Heating_Current_Temperature",
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
-        native_unit_of_measurement=TEMP_CELSIUS,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         icon="mdi:thermometer",
     ),
     SensorEntityDescription(
         key="Heating_Target_Temperature",
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
-        native_unit_of_measurement=TEMP_CELSIUS,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         icon="mdi:thermometer",
     ),
     SensorEntityDescription(
@@ -121,7 +121,7 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
             if await self.hive.heating.getBoostStatus(self.device) == "ON":
                 minsend = await self.hive.heating.getBoostTime(self.device)
                 s_a.update({"Boost ends in": (str(minsend) + " minutes")})
-            self.attributes = s_a
+            self._attr_extra_state_attributes = s_a
         elif self.device["hiveType"] == "Hotwater_State":
             self._attr_extra_state_attributes = await self.get_hotwater_state_sa()
         elif self.device["hiveType"] == "Hotwater_Mode":
