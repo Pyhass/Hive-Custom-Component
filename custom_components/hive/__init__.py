@@ -78,6 +78,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     web_session = aiohttp_client.async_get_clientsession(hass)
     hive_config = dict(entry.data)
     hive = Hive(web_session)
+    entry.runtime_data = hive
 
     hive_config["options"] = {}
     hive_config["options"].update(
