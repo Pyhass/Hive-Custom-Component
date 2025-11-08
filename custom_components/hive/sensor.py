@@ -1,5 +1,11 @@
 """Support for the Hive sensors."""
+
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import timedelta
+from typing import Any
+
+from apyhiveapi import Hive
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -8,13 +14,19 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE, UnitOfPower, UnitOfTemperature
+from homeassistant.const import (
+    PERCENTAGE,
+    EntityCategory,
+    UnitOfPower,
+    UnitOfTemperature,
+)
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import EntityCategory
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.typing import StateType
 
-from . import HiveEntity
+from . import HiveConfigEntry
 from .const import DOMAIN
+from .entity import HiveEntity
 
 PARALLEL_UPDATES = 0
 SCAN_INTERVAL = timedelta(seconds=15)
@@ -83,18 +95,24 @@ SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: HiveConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up Hive thermostat based on a config entry."""
-    hive = hass.data[DOMAIN][entry.entry_id]
+    hive = entry.runtime_data
     devices = hive.session.deviceList.get("sensor")
-    entities = []
-    if devices:
-        for description in SENSOR_TYPES:
-            for dev in devices:
-                if dev["hiveType"] == description.key:
-                    entities.append(HiveSensorEntity(hive, dev, description))
-    async_add_entities(entities, True)
+    if not devices:
+        return
+    async_add_entities(
+        (
+            HiveSensorEntity(hive, dev, description)
+            for dev in devices
+            for description in SENSOR_TYPES
+            if dev["hiveType"] == description.key
+        ),
+        True,
+    )
 
 
 class HiveSensorEntity(HiveEntity, SensorEntity):
