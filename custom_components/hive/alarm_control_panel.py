@@ -1,1 +1,0 @@
-from homeassistant.components.hive.alarm_control_panel import *
