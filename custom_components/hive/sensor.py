@@ -1,11 +1,6 @@
 """Support for the Hive sensors."""
 
-from collections.abc import Callable
-from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any
-
-from apyhiveapi import Hive
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -13,7 +8,6 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     PERCENTAGE,
     EntityCategory,
@@ -22,10 +16,8 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.typing import StateType
 
 from . import HiveConfigEntry
-from .const import DOMAIN
 from .entity import HiveEntity
 
 PARALLEL_UPDATES = 0
@@ -87,10 +79,7 @@ SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
         key="Mode",
         icon="mdi:eye",
     ),
-    SensorEntityDescription(
-        key="Availability",
-        icon="mdi:check-circle"
-    ),
+    SensorEntityDescription(key="Availability", icon="mdi:check-circle"),
 )
 
 
@@ -127,7 +116,7 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
         """Update all Node data from Hive."""
         await self.hive.session.updateData(self.device)
         self.device = await self.hive.sensor.getSensor(self.device)
-        
+
         if self.device["hiveType"] == "CurrentTemperature":
             self._attr_extra_state_attributes = await self.get_current_temp_sa()
         elif self.device["hiveType"] == "Heating_State":
@@ -150,12 +139,12 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
                 endsin = await self.hive.hotwater.getBoostTime(self.device)
                 s_a.update({"Boost ends in": (str(endsin) + " minutes")})
             self._attr_extra_state_attributes = s_a
-        
+
         if self.device["hiveType"] not in ("sense", "Availability"):
             self._attr_available = self.device.get("deviceData", {}).get("online", True)
         else:
             self._attr_available = True
-        
+
         if self._attr_available:
             self._attr_native_value = self.device["status"]["state"]
 
@@ -300,8 +289,7 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
                     and "status" in snan["later"]["value"]
                 ):
                     later_status = snan["later"]["value"]["status"]
-                    later_start = snan["later"]["Start_DateTime"].strftime(
-                        "%H:%M")
+                    later_start = snan["later"]["Start_DateTime"].strftime("%H:%M")
                     later_end = snan["later"]["End_DateTime"].strftime("%H:%M")
 
                     sa_string = later_status + " : " + later_start + " - " + later_end
