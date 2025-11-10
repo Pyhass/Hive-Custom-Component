@@ -21,7 +21,10 @@ jobs:
     - uses: actions/stale@v5
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-        stale-issue-message: 'There has been no activity on this Issue'
-        stale-pr-message: 'There has been no activity on this PR.'
+        stale-issue-message: 'There has been no activity on this Issue. Issue will be closed in 30 Days'
+        stale-pr-message: 'There has been no activity on this PR. PR will be closed in 14 Days'
         stale-issue-label: 'no-issue-activity'
         stale-pr-label: 'no-pr-activity'
+        days-before-close: 30
+        days-before-pr-close: 14
+        exempt-issue-labels: 'enhancement, question'
