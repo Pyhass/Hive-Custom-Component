@@ -7,6 +7,7 @@
         "data": {
           "username": "[%key:common::config_flow::data::username%]",
           "password": "[%key:common::config_flow::data::password%]",
+          "disable_2fa_debug": "Disable 2FA (debug)",
           "scan_interval": "Scan interval (seconds)"
         }
       },
@@ -37,6 +38,7 @@
       "invalid_username": "Failed to sign in to Hive. Your email address is not recognized.",
       "invalid_password": "Failed to sign in to Hive. Incorrect password, please try again.",
       "invalid_code": "Failed to sign in to Hive. Your two-factor authentication code was incorrect.",
+      "twofa_bypassed_debug": "2FA step was intentionally bypassed for debug. Check Home Assistant logs for Hive auth responses.",
       "no_internet_available": "An Internet connection is required to connect to Hive.",
       "unknown": "[%key:common::config_flow::error::unknown%]"
     },
