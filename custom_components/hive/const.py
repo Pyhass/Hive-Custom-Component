@@ -6,6 +6,7 @@ ATTR_TIME_PERIOD = "time_period"
 ATTR_ONOFF = "on_off"
 CONF_CODE = "2fa"
 CONF_DEVICE_NAME = "device_name"
+CONF_DISABLE_2FA_DEBUG = "disable_2fa_debug"
 CONFIG_ENTRY_VERSION = 1
 DEFAULT_NAME = "Hive"
 DOMAIN = "hive"

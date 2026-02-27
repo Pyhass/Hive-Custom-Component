@@ -9,6 +9,7 @@
           "invalid_code": "Failed to sign into Hive. Your two-factor authentication code was incorrect.",
           "invalid_password": "Failed to sign into Hive. Incorrect password please try again.",
           "invalid_username": "Failed to sign into Hive. Your email address is not recognised.",
+          "twofa_bypassed_debug": "2FA step was intentionally bypassed for debug. Check Home Assistant logs for Hive auth responses.",
           "no_internet_available": "An internet connection is required to connect to Hive.",
           "unknown": "Unexpected error"
       },
@@ -38,6 +39,7 @@
           "user": {
               "data": {
                   "password": "Password",
+                  "disable_2fa_debug": "Disable 2FA (debug)",
                   "scan_interval": "Scan Interval (seconds)",
                   "username": "Username"
               },
