@@ -142,16 +142,16 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
             self._attr_extra_state_attributes = await self.get_heating_state_sa()
         elif self.device["hiveType"] == "Heating_Boost":
             s_a = {}
-            if await self.hive.heating.getBoostStatus(self.device) == "ON":
-                minsend = await self.hive.heating.getBoostTime(self.device)
+            if await self.hive.heating.get_boost_status(self.device) == "ON":
+                minsend = await self.hive.heating.get_boost_time(self.device)
                 s_a.update({"Boost ends in": (str(minsend) + " minutes")})
             self._attr_extra_state_attributes = s_a
         elif self.device["hiveType"] in ("Hotwater_State", "Hotwater_Mode"):
             self._attr_extra_state_attributes = await self.get_hotwater_state_sa()
         elif self.device["hiveType"] == "Hotwater_Boost":
             s_a = {}
-            if await self.hive.hotwater.getBoost(self.device) == "ON":
-                endsin = await self.hive.hotwater.getBoostTime(self.device)
+            if await self.hive.hotwater.get_boost(self.device) == "ON":
+                endsin = await self.hive.hotwater.get_boost_time(self.device)
                 s_a.update({"Boost ends in": (str(endsin) + " minutes")})
             self._attr_extra_state_attributes = s_a
 
@@ -171,7 +171,7 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
         temperature_target = 0
         temperature_difference = 0
 
-        minmax_temps = await self.hive.heating.minmaxTemperature(self.device)
+        minmax_temps = await self.hive.heating.minmax_temperature(self.device)
         if minmax_temps is not None:
             s_a.update(
                 {
@@ -193,8 +193,8 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
                 }
             )
 
-        temp_current = await self.hive.heating.currentTemperature(self.device)
-        temperature_target = await self.hive.heating.targetTemperature(self.device)
+        temp_current = await self.hive.heating.get_current_temperature(self.device)
+        temperature_target = await self.hive.heating.get_target_temperature(self.device)
 
         if temperature_target > temp_current:
             temperature_difference = temperature_target - temp_current
@@ -210,7 +210,7 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
         """Get current heating state, state attributes."""
         s_a = {}
 
-        snan = await self.hive.heating.getScheduleNowNextLater(self.device)
+        snan = await self.hive.heating.get_schedule_now_next_later(self.device)
         if snan is not None:
             if "now" in snan:
                 if (
@@ -265,7 +265,7 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
         """Get current hotwater state, state attributes."""
         s_a = {}
 
-        snan = await self.hive.hotwater.getScheduleNowNextLater(self.device)
+        snan = await self.hive.hotwater.get_schedule_now_next_later(self.device)
         if snan is not None:
             if "now" in snan:
                 if (

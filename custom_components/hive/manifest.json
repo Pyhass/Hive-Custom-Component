@@ -4,11 +4,11 @@
   "config_flow": true,
   "documentation": "https://www.home-assistant.io/integrations/hive",
   "issue_tracker": "https://github.com/Pyhass/Hive-Custom-Component/issues",
-  "version": "2026.8.0",
+  "version": "2026.9.0",
   "homekit": {
     "models": ["HHKBridge*"]
   },
-  "requirements": ["pyhive-integration==1.0.9"],
+  "requirements": ["pyhive-integration==2.0.0b1"],
   "codeowners": ["@KJonline"],
   "iot_class": "cloud_polling",
   "loggers": ["apyhiveapi"]
