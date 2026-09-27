@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "HA core + Hive (debug)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "homeassistant",
+      "python": "${workspaceFolder}/../core/.venv/bin/python",
+      "cwd": "${workspaceFolder}/../core",
+      "args": ["--debug", "-c", "config", "--skip-pip"],
+      "justMyCode": false,
+      // HA runs the deployed copy; map it back so breakpoints here hit.
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/custom_components/hive",
+          "remoteRoot": "${workspaceFolder}/../core/config/custom_components/hive"
+        }
+      ],
+      "preLaunchTask": "Hive: Deploy to HA core"
+    }
+  ]
+}

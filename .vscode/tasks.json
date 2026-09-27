@@ -1,0 +1,56 @@
+{
+  // Deploy this custom component into the local Home Assistant core dev
+  // checkout (../core) and run it there.
+  "version": "2.0.0",
+  "options": {
+    "env": {
+      "HA_CORE": "${workspaceFolder}/../core",
+      "HA_CONFIG": "${workspaceFolder}/../core/config"
+    }
+  },
+  "tasks": [
+    {
+      "label": "Hive: Deploy to HA core",
+      "detail": "Back up the deployed copy, then sync custom_components/hive into ../core/config/custom_components/hive",
+      "type": "shell",
+      "command": "set -e; dest=\"$HA_CONFIG/custom_components/hive\"; if [ -d \"$dest\" ]; then bk=\"$HA_CONFIG/.hive_backups/$(date +%Y%m%d-%H%M%S)\"; mkdir -p \"$bk\"; rsync -a --exclude __pycache__ \"$dest/\" \"$bk/\"; echo \"Backed up previous deploy to $bk\"; fi; mkdir -p \"$dest\"; rsync -av --delete --exclude __pycache__ \"${workspaceFolder}/custom_components/hive/\" \"$dest/\"",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Hive: Install manifest requirement into HA venv",
+      "detail": "Install the pyhive-integration version pinned in manifest.json into the HA core venv using uv (replaces the editable ../Pyhive install)",
+      "type": "shell",
+      "command": "set -e; req=$(\"$HA_CORE/.venv/bin/python\" -c \"import json,sys;print(' '.join(json.load(open(sys.argv[1]))['requirements']))\" \"${workspaceFolder}/custom_components/hive/manifest.json\"); echo \"Installing: $req\"; VIRTUAL_ENV=\"$HA_CORE/.venv\" \"$HA_CORE/.venv/bin/uv\" pip install $req",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Hive: Use local Pyhive (editable) in HA venv",
+      "detail": "uv pip install -e ../Pyhive/codebase into the HA core venv",
+      "type": "shell",
+      "command": "VIRTUAL_ENV=\"$HA_CORE/.venv\" \"$HA_CORE/.venv/bin/uv\" pip install -e \"${workspaceFolder}/../Pyhive/codebase\"",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Hive: Show pyhive version in HA venv",
+      "type": "shell",
+      "command": "\"$HA_CORE/.venv/bin/python\" -c \"from importlib.metadata import distribution as d; x=d('pyhive-integration'); print('pyhive-integration', x.version); print(x.read_text('direct_url.json') or 'installed from PyPI')\"",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Hive: Deploy and run HA core",
+      "detail": "Deploy, then start Home Assistant with ../core/config (--skip-pip so the venv's pyhive is used as-is)",
+      "type": "shell",
+      "command": "cd \"$HA_CORE\" && .venv/bin/python -m homeassistant --debug -c config --skip-pip",
+      "dependsOn": ["Hive: Deploy to HA core"],
+      "group": { "kind": "test", "isDefault": true },
+      "isBackground": true,
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    }
+  ]
+}
