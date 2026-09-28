@@ -3,7 +3,7 @@
   "name": "Hive",
   "codeowners": ["@KJonline"],
   "config_flow": true,
-  "documentation": "https://www.home-assistant.io/integrations/hive",
+  "documentation": "https://github.com/Pyhass/Hive-Custom-Component",
   "homekit": {
     "models": ["HHKBridge*"]
   },
