@@ -89,13 +89,13 @@ async def async_remove_config_entry_device(
     return True
 
 
-def refresh_system[_HiveEntityT: HiveEntity, **_P](
-    func: Callable[Concatenate[_HiveEntityT, _P], Awaitable[Any]],
-) -> Callable[Concatenate[_HiveEntityT, _P], Coroutine[Any, Any, None]]:
+def refresh_system[HiveEntityT: HiveEntity, **P](
+    func: Callable[Concatenate[HiveEntityT, P], Awaitable[Any]],
+) -> Callable[Concatenate[HiveEntityT, P], Coroutine[Any, Any, None]]:
     """Force update all entities after state change."""
 
     @wraps(func)
-    async def wrapper(self: _HiveEntityT, *args: _P.args, **kwargs: _P.kwargs) -> None:
+    async def wrapper(self: HiveEntityT, *args: P.args, **kwargs: P.kwargs) -> None:
         await func(self, *args, **kwargs)
         async_dispatcher_send(self.hass, DOMAIN)
 

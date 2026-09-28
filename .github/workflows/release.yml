@@ -1,0 +1,42 @@
+# Runs when a GitHub release is published (including pre-releases).
+# Fails the run if the tag doesn't match manifest.json, then attaches hive.zip
+# for manual installs.
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check tag matches manifest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+      - env:
+          TAG: ${{ github.event.release.tag_name }}
+          PRERELEASE: ${{ github.event.release.prerelease }}
+        run: >-
+          uv run --no-project --with packaging
+          python .github/scripts/check_release.py "$TAG" "$PRERELEASE"
+
+  attach-zip:
+    name: Attach hive.zip
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build zip
+        working-directory: custom_components/hive
+        run: zip -r "$GITHUB_WORKSPACE/hive.zip" . -x '__pycache__/*'
+      - run: gh release upload "$TAG" hive.zip --clobber

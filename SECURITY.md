@@ -2,15 +2,15 @@
 
 ## Supported Versions
 
-We support the below versions of the Hive Custom Component.
-
-| Version | Supported          |
-| ------- | ------------------ |
-| > 2025.1.x   | :white_check_mark: |                |
-| < 2025     | :x:                |
+Only the latest release of the Hive Custom Component receives security fixes.
+Update through HACS or download the [latest release](https://github.com/Pyhass/Hive-Custom-Component/releases/latest).
 
 ## Reporting a Vulnerability
 
-To report a vulnerability, please raise a bug with a label of vulnerability.
+Please **don't** open a public issue for security problems.
 
-[**>> Report vulnerability here <<**](https://github.com/Pyhive/HA-Hive-Custom-Component/issues)
+Report it privately through GitHub instead:
+[**>> Report a vulnerability <<**](https://github.com/Pyhass/Hive-Custom-Component/security/advisories/new)
+
+Include what you found, how to reproduce it, and which version you tested. Please
+remove any Hive account details, tokens or logs containing personal information.
