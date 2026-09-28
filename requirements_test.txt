@@ -1,0 +1,4 @@
+# Pins the Home Assistant version the tests run against (0.13.367 -> homeassistant 2026.9.4).
+# Bumped by Dependabot; the nightly compat workflow also tests the latest stable and beta.
+pytest-homeassistant-custom-component==0.13.367
+ruff==0.16.9

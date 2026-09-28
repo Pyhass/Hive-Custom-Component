@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # Keeps action versions in .github/workflows current.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ["*"]
+    labels: [dependencies]
+
+  # requirements_test.txt: the HA test plugin (which pins the HA version CI
+  # tests against) and ruff. pyhive-integration is handled by pyhive_bump.yml.
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    labels: [dependencies]

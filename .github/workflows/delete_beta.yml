@@ -1,16 +1,21 @@
+# Manually clean up old beta releases (and their tags), keeping the newest one.
+# Stable releases are never touched.
 name: Delete Beta Releases
 
-on: 
+on:
   workflow_dispatch:
-    
+
+permissions:
+  contents: write
+
 jobs:
-  close:
+  delete:
     runs-on: ubuntu-latest
     steps:
-      - uses: dev-drprasad/delete-older-releases@v0.2.0
+      - uses: dev-drprasad/delete-older-releases@v0.3.4
         with:
           keep_latest: 1
-          delete_tags: true 
-          delete_tag_pattern: _b
+          delete_prerelease_only: true
+          delete_tags: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}

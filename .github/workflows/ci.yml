@@ -1,0 +1,89 @@
+# Checks every PR and push to master. Make the jobs below required checks on master.
+#
+# This workflow deliberately has no schedule: GitHub auto-disables scheduled
+# workflows after 60 days without repo activity, which also stops their
+# push/pull_request triggers. Nightly jobs live in compat.yml instead.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hacs:
+    name: HACS validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: hacs/action@22.5.0
+        with:
+          category: integration
+          ignore: brands
+
+  hassfest:
+    name: Hassfest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # home-assistant/actions has no maintained releases; master tracks the
+      # current hassfest rules, which is what we want to validate against.
+      - uses: home-assistant/actions/hassfest@master
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - name: Ruff version from requirements_test.txt
+        id: ruff
+        run: echo "spec=$(grep '^ruff==' requirements_test.txt)" >> "$GITHUB_OUTPUT"
+      - run: uvx "${{ steps.ruff.outputs.spec }}" check --output-format=github .
+      - run: uvx "${{ steps.ruff.outputs.spec }}" format --check .
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: "3.14"
+          activate-environment: true
+          enable-cache: true
+          cache-dependency-glob: |
+            requirements_test.txt
+            custom_components/hive/manifest.json
+      - name: Install dependencies
+        run: uv pip install -r requirements_test.txt $(jq -r '.requirements[]' custom_components/hive/manifest.json)
+      - run: python -m pytest
+
+  enable-scheduled-workflows:
+    # Self-heal: switch nightly/weekly workflows back on if GitHub disabled them
+    # for inactivity, so they don't stay off unnoticed like they did in 2026.
+    name: Re-enable scheduled workflows
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - run: |
+          for workflow in compat.yml stale.yml pyhive_bump.yml; do
+            state=$(gh workflow view "$workflow" --json state --jq .state)
+            if [ "$state" = "disabled_inactivity" ]; then
+              gh workflow enable "$workflow"
+              echo "::notice::Re-enabled $workflow (was disabled for inactivity)"
+            fi
+          done

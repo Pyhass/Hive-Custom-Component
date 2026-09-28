@@ -1,0 +1,73 @@
+# Nightly check against Home Assistant releases this repo doesn't pin.
+#
+# Most platforms here re-export core's hive platforms, so a new HA release can
+# break the component without any change in this repo. This catches that before
+# users do.
+#   stable/beta: full test suite on the newest release in that channel
+#                (skipped for beta when no beta is newer than stable).
+#   dev:         import smoke test against core's dev branch (the test plugin
+#                isn't published for dev builds).
+name: Compatibility
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: HACS and hassfest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: hacs/action@22.5.0
+        with:
+          category: integration
+          ignore: brands
+      - uses: home-assistant/actions/hassfest@master
+
+  tests:
+    name: Tests (HA ${{ matrix.channel }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [stable, beta]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: "3.14"
+          activate-environment: true
+      - run: uv pip install packaging
+      - name: Find Home Assistant ${{ matrix.channel }} release
+        id: ha
+        run: python .github/scripts/resolve_ha_release.py ${{ matrix.channel }} >> "$GITHUB_OUTPUT"
+      - name: Install dependencies
+        if: steps.ha.outputs.skip != 'true'
+        run: >-
+          uv pip install
+          "pytest-homeassistant-custom-component==${{ steps.ha.outputs.test_plugin }}"
+          $(jq -r '.requirements[]' custom_components/hive/manifest.json)
+      - name: Run tests against Home Assistant ${{ steps.ha.outputs.homeassistant }}
+        if: steps.ha.outputs.skip != 'true'
+        run: python -m pytest
+
+  dev:
+    name: Import smoke test (HA dev)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: "3.14"
+          activate-environment: true
+      - name: Install Home Assistant dev
+        run: >-
+          uv pip install
+          "homeassistant @ git+https://github.com/home-assistant/core@dev"
+          $(jq -r '.requirements[]' custom_components/hive/manifest.json)
+      - run: python .github/scripts/smoke_import.py
