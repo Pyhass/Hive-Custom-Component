@@ -1,5 +1,6 @@
 {
   "name": "Hive Custom Component",
   "render_readme": true,
-  "content_in_root": false
+  "content_in_root": false,
+  "homeassistant": "2025.6.0"
 }

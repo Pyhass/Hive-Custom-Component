@@ -1,0 +1,110 @@
+name: Bug report
+description: Something isn't working with the Hive custom component
+title: "[BUG] "
+labels: [bug]
+assignees: [KJonline]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Please check the [open issues](https://github.com/Pyhass/Hive-Custom-Component/issues) first in case it's already reported.
+
+        **Security issues:** don't report them here. Use [private vulnerability reporting](https://github.com/Pyhass/Hive-Custom-Component/security/advisories/new) instead.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: What went wrong, and what did you expect to happen instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to Settings > Devices & services > Hive
+        2. ...
+    validations:
+      required: false
+
+  - type: input
+    id: component-version
+    attributes:
+      label: Hive custom component version
+      description: Shown in HACS, or `version` in `custom_components/hive/manifest.json`.
+      placeholder: "2026.8.0"
+    validations:
+      required: true
+
+  - type: input
+    id: ha-version
+    attributes:
+      label: Home Assistant version
+      description: Settings > About.
+      placeholder: "2026.9.4"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: How did you install the component?
+      options:
+        - HACS
+        - Manually
+    validations:
+      required: true
+
+  - type: dropdown
+    id: devices
+    attributes:
+      label: Which Hive devices are affected?
+      multiple: true
+      options:
+        - Heating / thermostat
+        - Hot water
+        - Radiator valves (TRVs)
+        - Lights
+        - Smart plugs
+        - Sensors (motion, contact)
+        - Hub
+        - Login / 2FA / setup
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Debug logs
+      description: |
+        Add this to `configuration.yaml`, restart, reproduce the problem, then paste the relevant lines from **Settings > System > Logs** (select *Show raw logs*):
+        ```yaml
+        logger:
+          default: warning
+          logs:
+            custom_components.hive: debug
+            apyhiveapi: debug
+        ```
+        **Remove your email address, tokens and any other personal details before posting.**
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: Screenshots, when it started, whether it worked on an earlier version, etc.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I've removed personal information (email, tokens, device IDs) from the logs above.
+          required: true

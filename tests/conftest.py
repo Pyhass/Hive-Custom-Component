@@ -8,7 +8,10 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+<<<<<<< HEAD
 from homeassistant.core import HomeAssistant
+=======
+>>>>>>> 1a55d87294f3c1fd059bd190faec008e020cc2cf
 
 from custom_components.hive.const import DOMAIN
 
@@ -32,6 +35,7 @@ def auto_enable_custom_integrations(enable_custom_integrations: None) -> None:
 
 def make_device(
     hive_type: str,
+<<<<<<< HEAD
     state: Any = None,
     *,
     ha_type: str = "sensor",
@@ -47,12 +51,26 @@ def make_device(
     status defaults to {"state": state}; extra keys (e.g. temperatureunit, min_temp)
     are added at the top level, the way pyhive's addList adds them.
     """
+=======
+    state: Any,
+    *,
+    hive_id: str = "trv-1",
+    name: str = "Lounge TRV",
+    online: bool = True,
+) -> dict[str, Any]:
+    """Build a device dict shaped like the ones pyhive returns."""
+>>>>>>> 1a55d87294f3c1fd059bd190faec008e020cc2cf
     return {
         "hiveID": hive_id,
         "hiveName": name,
         "hiveType": hive_type,
+<<<<<<< HEAD
         "haType": ha_type,
         "haName": ha_name or f"{name} {hive_type.replace('_', ' ')}",
+=======
+        "haType": "sensor",
+        "haName": f"{name} {hive_type.replace('_', ' ')}",
+>>>>>>> 1a55d87294f3c1fd059bd190faec008e020cc2cf
         "device_id": hive_id,
         "device_name": name,
         "parentDevice": HUB_ID,
@@ -62,8 +80,12 @@ def make_device(
             "version": "1.0.0",
             "online": online,
         },
+<<<<<<< HEAD
         "status": {"state": state} if status is None else status,
         **extra,
+=======
+        "status": {"state": state},
+>>>>>>> 1a55d87294f3c1fd059bd190faec008e020cc2cf
     }
 
 
@@ -97,6 +119,7 @@ def sensor_devices() -> list[dict[str, Any]]:
 
 
 @pytest.fixture
+<<<<<<< HEAD
 def platform_devices() -> dict[str, list[dict[str, Any]]]:
     """Devices for the other platforms, keyed like pyhive's deviceList."""
     return {}
@@ -117,15 +140,24 @@ def mock_hive(
     state through the device dicts it passes in.
     """
     devices = {"parent": [HUB_DEVICE], "sensor": sensor_devices, **platform_devices}
+=======
+def mock_hive(sensor_devices: list[dict[str, Any]]) -> Generator[MagicMock]:
+    """Patch the Hive API client used by async_setup_entry."""
+    devices = {"parent": [HUB_DEVICE], "sensor": sensor_devices}
+>>>>>>> 1a55d87294f3c1fd059bd190faec008e020cc2cf
     hive = MagicMock()
     hive.session.startSession = AsyncMock(return_value=devices)
     hive.session.deviceList = devices
     hive.session.updateData = AsyncMock()
+<<<<<<< HEAD
     hive.sensor.getSensor = AsyncMock(side_effect=_echo)
     hive.heating.getClimate = AsyncMock(side_effect=_echo)
     hive.hotwater.getWaterHeater = AsyncMock(side_effect=_echo)
     hive.light.getLight = AsyncMock(side_effect=_echo)
     hive.switch.getSwitch = AsyncMock(side_effect=_echo)
+=======
+    hive.sensor.getSensor = AsyncMock(side_effect=lambda device: device)
+>>>>>>> 1a55d87294f3c1fd059bd190faec008e020cc2cf
     hive.updateInterval = AsyncMock()
     with patch("custom_components.hive.Hive", return_value=hive):
         yield hive
@@ -140,11 +172,15 @@ def mock_auth() -> Generator[MagicMock]:
     auth.device_registration = AsyncMock()
     auth.get_device_data = AsyncMock(return_value=DEVICE_DATA)
     auth.is_device_registered = AsyncMock(return_value=True)
+<<<<<<< HEAD
     auth.forget_device = AsyncMock()
     with (
         patch("custom_components.hive.config_flow.Auth", return_value=auth),
         patch("custom_components.hive.Auth", return_value=auth),
     ):
+=======
+    with patch("custom_components.hive.config_flow.Auth", return_value=auth):
+>>>>>>> 1a55d87294f3c1fd059bd190faec008e020cc2cf
         yield auth
 
 
@@ -155,6 +191,7 @@ def mock_setup_entry() -> Generator[AsyncMock]:
         "custom_components.hive.async_setup_entry", return_value=True
     ) as setup_entry:
         yield setup_entry
+<<<<<<< HEAD
 
 
 @pytest.fixture
@@ -166,3 +203,5 @@ async def setup_integration(
     assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
     await hass.async_block_till_done()
     return mock_config_entry
+=======
+>>>>>>> 1a55d87294f3c1fd059bd190faec008e020cc2cf

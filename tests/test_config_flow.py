@@ -16,7 +16,10 @@ from homeassistant.const import CONF_PASSWORD, CONF_SCAN_INTERVAL, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
+<<<<<<< HEAD
 from custom_components.hive.config_flow import _sanitize_payload
+=======
+>>>>>>> 1a55d87294f3c1fd059bd190faec008e020cc2cf
 from custom_components.hive.const import CONF_CODE, CONF_DEVICE_NAME, DOMAIN
 
 from .conftest import DEVICE_DATA, PASSWORD, TOKENS, USERNAME
@@ -256,6 +259,7 @@ async def test_options_flow(
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert mock_config_entry.options == {CONF_SCAN_INTERVAL: 60}
     hive.updateInterval.assert_awaited_once_with(60)
+<<<<<<< HEAD
 
 
 async def test_device_registration_failure_still_creates_entry(
@@ -335,3 +339,5 @@ def test_sanitize_payload() -> None:
         "Devices": [{"DeviceKey": "key", "RefreshToken": 12345}],
     }
     assert payload["Session"] == "abcdefghijklmnop"
+=======
+>>>>>>> 1a55d87294f3c1fd059bd190faec008e020cc2cf

@@ -1,0 +1,35 @@
+name: Feature request
+description: Suggest an improvement or new feature
+title: "[FEATURE] "
+labels: [enhancement]
+assignees: [KJonline]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: For example, "I can't see when my hot water boost ends."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+    validations:
+      required: false
+
+  - type: input
+    id: devices
+    attributes:
+      label: Hive devices involved
+      placeholder: "e.g. Hive Thermostat mini, radiator valves"
+    validations:
+      required: false

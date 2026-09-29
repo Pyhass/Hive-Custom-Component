@@ -8,12 +8,18 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from homeassistant.config_entries import SOURCE_REAUTH, ConfigEntryState
+<<<<<<< HEAD
 from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 from custom_components.hive import async_remove_config_entry_device, refresh_system
+=======
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
+
+>>>>>>> 1a55d87294f3c1fd059bd190faec008e020cc2cf
 from custom_components.hive.const import DOMAIN
 
 from .conftest import HUB_ID
@@ -68,6 +74,7 @@ async def test_setup_failures(
     assert mock_config_entry.state is state
     reauth_flows = mock_config_entry.async_get_active_flows(hass, {SOURCE_REAUTH})
     assert bool(list(reauth_flows)) is isinstance(exception, HiveReauthRequired)
+<<<<<<< HEAD
 
 
 @pytest.mark.parametrize(
@@ -143,3 +150,5 @@ async def test_refresh_system(hass: HomeAssistant) -> None:
 
     assert calls == [5]
     assert signals == [True]
+=======
+>>>>>>> 1a55d87294f3c1fd059bd190faec008e020cc2cf
