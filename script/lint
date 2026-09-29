@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Fix what can be fixed, then run the same checks as CI's Lint job.
+#   script/lint          # fix and check
+#   script/lint --check  # check only (what CI does)
+source "$(dirname "$0")/_common.sh"
+need_venv
+
+ruff="$VENV/bin/ruff"
+if [ "${1:-}" = "--check" ]; then
+  "$ruff" check .
+  "$ruff" format --check .
+  "$VENV/bin/python" script/gen_translations.py --check
+else
+  "$ruff" check --fix .
+  "$ruff" format .
+  "$VENV/bin/python" script/gen_translations.py
+fi

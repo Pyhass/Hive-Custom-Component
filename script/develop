@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Run a local Home Assistant with this component loaded, at http://localhost:8123.
+#
+# config/ holds the HA instance (onboarding, your Hive login, the database). Only
+# config/configuration.yaml is committed. Stop with Ctrl+C; code changes need a restart.
+source "$(dirname "$0")/_common.sh"
+need_venv
+
+mkdir -p config
+# HA loads custom components from <config>/custom_components.
+if [ ! -e config/custom_components ]; then
+  ln -s ../custom_components config/custom_components
+fi
+
+exec "$VENV/bin/hass" --config config --debug "$@"
