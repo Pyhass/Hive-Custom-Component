@@ -7,19 +7,12 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-<<<<<<< HEAD
 from homeassistant.const import PERCENTAGE, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
 from custom_components.hive import sensor
 
-=======
-from homeassistant.const import PERCENTAGE, STATE_UNAVAILABLE
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
-
->>>>>>> 1a55d87294f3c1fd059bd190faec008e020cc2cf
 from .conftest import make_device
 
 
@@ -119,7 +112,6 @@ async def test_unknown_sensor_type_is_ignored(
     await _setup(hass, mock_config_entry)
 
     assert hass.states.async_entity_ids("sensor") == []
-<<<<<<< HEAD
 
 
 @pytest.mark.parametrize(
@@ -311,5 +303,3 @@ async def test_sensor_platform_without_devices(
     await sensor.async_setup_entry(hass, mock_config_entry, add_entities)
 
     add_entities.assert_not_called()
-=======
->>>>>>> 1a55d87294f3c1fd059bd190faec008e020cc2cf
