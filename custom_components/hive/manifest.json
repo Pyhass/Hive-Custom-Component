@@ -12,5 +12,5 @@
   "issue_tracker": "https://github.com/Pyhass/Hive-Custom-Component/issues",
   "loggers": ["apyhiveapi"],
   "requirements": ["pyhive-integration==2.0.0b4"],
-  "version": "2026.8.0"
+  "version": "2026.10.1b2"
 }
