@@ -3,7 +3,11 @@
 from unittest.mock import MagicMock
 
 from aiohttp.web_exceptions import HTTPServiceUnavailable
-from apyhiveapi.helper.hive_exceptions import HiveReauthRequired
+from apyhiveapi.helper.hive_exceptions import (
+    HiveConnectionError,
+    HiveReauthRequired,
+    HiveUnknownConfiguration,
+)
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -42,10 +46,12 @@ async def test_setup_and_unload(
 
 
 @pytest.mark.parametrize(
-    ("exception", "state"),
+    ("exception", "state", "reauth"),
     [
-        (HTTPServiceUnavailable(), ConfigEntryState.SETUP_RETRY),
-        (HiveReauthRequired(), ConfigEntryState.SETUP_ERROR),
+        (HTTPServiceUnavailable(), ConfigEntryState.SETUP_RETRY, False),
+        (HiveConnectionError(), ConfigEntryState.SETUP_RETRY, False),
+        (HiveReauthRequired(), ConfigEntryState.SETUP_ERROR, True),
+        (HiveUnknownConfiguration(), ConfigEntryState.SETUP_ERROR, True),
     ],
 )
 async def test_setup_failures(
@@ -55,6 +61,7 @@ async def test_setup_failures(
     mock_config_entry: MockConfigEntry,
     exception: Exception,
     state: ConfigEntryState,
+    reauth: bool,
 ) -> None:
     """Network errors retry setup, auth errors start reauth."""
     mock_hive.session.startSession.side_effect = exception
@@ -67,7 +74,7 @@ async def test_setup_failures(
 
     assert mock_config_entry.state is state
     reauth_flows = mock_config_entry.async_get_active_flows(hass, {SOURCE_REAUTH})
-    assert bool(list(reauth_flows)) is isinstance(exception, HiveReauthRequired)
+    assert bool(list(reauth_flows)) is reauth
 
 
 @pytest.mark.parametrize(
