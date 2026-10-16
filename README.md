@@ -21,6 +21,17 @@ sensors e.g `Living Room Lamp Battery Level`
   * Current State - Heating/Hotwater only
   * Boost State - Heating/Hotwater only
 
+## How this relates to the built-in Hive integration
+
+This component replaces Home Assistant's built-in Hive integration. It reuses the
+built-in code wherever it can and adds the extras above on top.
+
+Think of it as an opt-in fast channel. Fixes and new versions of the Hive library
+([`pyhive-integration`](https://pypi.org/project/pyhive-integration/)) usually reach
+this component before they reach Home Assistant itself. If you want to help test the
+newest changes, turn on beta releases for this repository in HACS. Betas may use
+pre-release versions of the library. Stable releases only use stable ones.
+
 For details on what the Home Assistant Hive component supports, please see below:
 
 [**>> Hive Component Documentation <<**](https://www.home-assistant.io/integrations/hive/)

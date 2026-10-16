@@ -29,6 +29,9 @@ Compare what you find with MAINTAINING.md:
 - **Unreleased commits on master:** suggest a release if there are user-facing changes.
 - **Branch protection:** the required checks should be `HACS validation`, `Hassfest`, `Lint` and `Tests`, with code owner review on.
 - **Secrets:** `BOT_TOKEN` should be present.
+- **Hassfest:** a warning that `pyhive-integration` differs from core hive is expected (see `CLAUDE.md`), so don't report it as a problem.
+- **pyhive-integration:** compare the manifest pin with core hive's pin and with the newest version on PyPI, pre-releases included. A newer pyhive beta than the pin is a candidate for the next component beta (`/bump-pyhive`, then `/release`). A pre-release pin on `master` blocks stable releases until it's moved to a stable version.
+- **Latest beta release:** the tag should match the `version` in its manifest (`git show <tag>:custom_components/hive/manifest.json | jq -r .version`).
 - **Pinned HA:** compare the HA version in the `requirements_test.txt` comment with the latest stable on PyPI (`curl -fsS https://pypi.org/pypi/homeassistant/json | jq -r .info.version`). A gap of more than one minor release means the Dependabot PR is stuck.
 
 Report as a short table with ✅ / ⚠️ / ❌ and one line each. Then list the actions in priority order, each with the skill to use (`/triage-compat`, `/bump-pyhive`, `/release`) or the settings page to change.
