@@ -4,13 +4,17 @@
 
 HACS installs by tag, so the tag must match the manifest version (compared as
 versions, so tag 2026.3.1.b1 matches manifest 2026.3.1b1). A beta version must be
-a GitHub pre-release, otherwise HACS offers it to every user.
+a GitHub pre-release, otherwise HACS offers it to every user. A stable release
+must also pin a stable pyhive-integration: pre-release libraries only ship in the
+opt-in beta channel (see CLAUDE.md).
 """
 
 import json
 from pathlib import Path
 import sys
 
+from packaging.requirements import Requirement
+from packaging.utils import canonicalize_name
 from packaging.version import InvalidVersion, Version
 
 MANIFEST = (
@@ -19,7 +23,8 @@ MANIFEST = (
 
 
 def main(tag: str, prerelease: bool) -> int:
-    manifest_version = json.loads(MANIFEST.read_text(encoding="utf-8"))["version"]
+    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    manifest_version = manifest["version"]
     errors = []
     try:
         tag_version = Version(tag)
@@ -42,6 +47,15 @@ def main(tag: str, prerelease: bool) -> int:
             f"{tag} is marked as a pre-release but isn't a beta version "
             "(expected something like 2026.9.0b1)."
         )
+    if not tag_version.is_prerelease:
+        for req in map(Requirement, manifest.get("requirements", [])):
+            if canonicalize_name(req.name) == "pyhive-integration" and any(
+                Version(spec.version).is_prerelease for spec in req.specifier
+            ):
+                errors.append(
+                    f"{tag} is a stable release but pins {req}. Stable releases go "
+                    "to every HACS user, so ship pre-release pyhive in a beta instead."
+                )
 
     for error in errors:
         print(f"::error::{error}")

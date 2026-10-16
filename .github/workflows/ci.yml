@@ -34,9 +34,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      # home-assistant/actions has no maintained releases; master tracks the
-      # current hassfest rules, which is what we want to validate against.
-      - uses: home-assistant/actions/hassfest@master
+      # Runs the same image as home-assistant/actions/hassfest (latest rules),
+      # but lets our pyhive-integration pin differ from core hive's. See CLAUDE.md.
+      - run: python3 .github/scripts/hassfest.py
 
   lint:
     name: Lint
@@ -81,7 +81,7 @@ jobs:
     steps:
       - run: |
           for workflow in compat.yml stale.yml pyhive_bump.yml; do
-            state=$(gh workflow view "$workflow" --json state --jq .state)
+            state=$(gh api "repos/$GH_REPO/actions/workflows/$workflow" --jq .state)
             if [ "$state" = "disabled_inactivity" ]; then
               gh workflow enable "$workflow"
               echo "::notice::Re-enabled $workflow (was disabled for inactivity)"

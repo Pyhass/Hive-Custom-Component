@@ -5,6 +5,8 @@ description: Diagnose and fix a failing nightly Compatibility workflow (compat.y
 
 # Triage Compatibility
 
+Principle 1 in `CLAUDE.md` applies: this component extends core's hive integration and reuses it wherever possible, so fixes adapt to core rather than fork it.
+
 Background: most platform files (`binary_sensor.py`, `climate.py`, `light.py`, `switch.py`, `water_heater.py`, `entity.py`) re-export `homeassistant.components.hive.*`. `__init__.py`, `sensor.py` and `config_flow.py` are this repo's own code, but they rely on HA helpers and on core's `HiveEntity`. HA changes break things here without any commit in this repo.
 
 ## 1. Find what failed
@@ -20,7 +22,7 @@ Map it using the table in MAINTAINING.md → "Compatibility is red":
 - **beta** fails: must be fixed before the next monthly HA release.
 - **dev** smoke import fails: an import was renamed or removed upstream.
 - The resolver step fails with "No pytest-homeassistant-custom-component release pins…": the plugin isn't published yet. Rerun later with `gh run rerun <id> --failed`. There's nothing to fix.
-- **HACS/hassfest** fails: follow the validator's message.
+- **HACS/hassfest** fails: follow the validator's message. A `[REQUIREMENTS]` message about `pyhive-integration` differing from core hive is expected, and `.github/scripts/hassfest.py` reports it as a warning (see `CLAUDE.md`). If it's failing on that, hassfest has reworded the message, so update the `ALLOWED` pattern in that script. Don't loosen the pin.
 
 ## 2. Reproduce locally
 Use a separate venv so `.venv` (which matches CI's pinned HA) stays untouched:
