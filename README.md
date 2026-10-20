@@ -51,6 +51,8 @@ The recommended way to is to install via [HACS](https://hacs.xyz/).
 Once HACS has been installed and setup. You just need to navigate to the HACS panel and choose integrations.
 This will show and option to add an integration click it and search for Hive in the presented popup.
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Pyhass&repository=Hive-Custom-Component)
+
 Once installation is complete please follow the [setup section](#setup) to set the Hive integration up.
 
 ### Manually
