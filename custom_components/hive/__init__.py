@@ -9,11 +9,7 @@ from typing import Any, Concatenate
 
 from aiohttp.web_exceptions import HTTPException
 from apyhiveapi import Auth, Hive
-from apyhiveapi.helper.hive_exceptions import (
-    HiveConnectionError,
-    HiveReauthRequired,
-    HiveUnknownConfiguration,
-)
+from apyhiveapi.helper.hive_exceptions import HiveReauthRequired
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_SCAN_INTERVAL
@@ -47,10 +43,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: HiveConfigEntry) -> bool
     except HTTPException as error:
         _LOGGER.error("Could not connect to the internet: %s", error)
         raise ConfigEntryNotReady from error
-    except HiveConnectionError as error:
-        _LOGGER.error("Could not fetch devices from Hive: %s", error)
-        raise ConfigEntryNotReady from error
-    except (HiveReauthRequired, HiveUnknownConfiguration) as err:
+    except HiveReauthRequired as err:
         raise ConfigEntryAuthFailed from err
 
     device_registry = dr.async_get(hass)
@@ -96,13 +89,13 @@ async def async_remove_config_entry_device(
     return True
 
 
-def refresh_system[HiveEntityT: HiveEntity, **P](
-    func: Callable[Concatenate[HiveEntityT, P], Awaitable[Any]],
-) -> Callable[Concatenate[HiveEntityT, P], Coroutine[Any, Any, None]]:
+def refresh_system[_HiveEntityT: HiveEntity, **_P](
+    func: Callable[Concatenate[_HiveEntityT, _P], Awaitable[Any]],
+) -> Callable[Concatenate[_HiveEntityT, _P], Coroutine[Any, Any, None]]:
     """Force update all entities after state change."""
 
     @wraps(func)
-    async def wrapper(self: HiveEntityT, *args: P.args, **kwargs: P.kwargs) -> None:
+    async def wrapper(self: _HiveEntityT, *args: _P.args, **kwargs: _P.kwargs) -> None:
         await func(self, *args, **kwargs)
         async_dispatcher_send(self.hass, DOMAIN)
 
