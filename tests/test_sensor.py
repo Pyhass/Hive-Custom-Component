@@ -13,7 +13,7 @@ from homeassistant.helpers import entity_registry as er
 
 from custom_components.hive import sensor
 
-from .conftest import make_device
+from .conftest import HOLIDAY_SENSORS, make_device
 
 
 async def _setup(hass: HomeAssistant, entry: MockConfigEntry) -> None:
@@ -111,7 +111,7 @@ async def test_unknown_sensor_type_is_ignored(
     """Device types without a description don't create entities."""
     await _setup(hass, mock_config_entry)
 
-    assert hass.states.async_entity_ids("sensor") == []
+    assert set(hass.states.async_entity_ids("sensor")) == HOLIDAY_SENSORS
 
 
 @pytest.mark.parametrize(
@@ -294,9 +294,10 @@ async def test_mode_sensor_without_state(
 async def test_sensor_platform_without_devices(
     hass: HomeAssistant, mock_config_entry: MockConfigEntry
 ) -> None:
-    """The sensor platform adds nothing when Hive reports no sensors."""
+    """The sensor platform adds nothing when Hive reports no sensors or hub."""
     hive = MagicMock()
     hive.session.deviceList = {"sensor": []}
+    hive.session.hub_id = None
     mock_config_entry.runtime_data = hive
     add_entities = MagicMock()
 
