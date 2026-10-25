@@ -2,4 +2,4 @@
 # Bumped by Dependabot; the nightly compat workflow also tests the latest stable and beta.
 
 ruff==0.16.10
-pytest-homeassistant-custom-component==0.13.370
+pytest-homeassistant-custom-component==0.13.373
