@@ -1,0 +1,5 @@
+# Code owners are requested for review automatically on every PR.
+# With "Require review from Code Owners" on master, their approval is needed to merge.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+* @KJonline

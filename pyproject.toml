@@ -1,0 +1,38 @@
+# Tooling config only - this repo is a Home Assistant custom component, not a package.
+
+[tool.ruff]
+target-version = "py314"
+extend-exclude = [".vscode"]
+
+[tool.ruff.lint]
+select = [
+  "B",   # flake8-bugbear
+  "E",   # pycodestyle errors
+  "F",   # pyflakes
+  "I",   # isort
+  "UP",  # pyupgrade
+  "W",   # pycodestyle warnings
+]
+ignore = [
+  "E501", # line length is handled by the formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+# These platforms re-export Home Assistant core's hive platforms on purpose.
+"custom_components/hive/{binary_sensor,climate,entity,light,switch,water_heater}.py" = ["F403"]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+combine-as-imports = true
+known-first-party = ["custom_components.hive"]
+known-third-party = ["apyhiveapi"]
+section-order = ["future", "standard-library", "third-party", "homeassistant", "first-party", "local-folder"]
+split-on-trailing-comma = false
+
+[tool.ruff.lint.isort.sections]
+homeassistant = ["homeassistant"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Create .venv with the same Python and dependencies CI uses.
+#
+#   script/setup             # create or update .venv
+#   script/setup --recreate  # delete .venv first (e.g. it was built with the wrong Python)
+source "$(dirname "$0")/_common.sh"
+
+if ! command -v uv >/dev/null; then
+  echo "uv is required: https://docs.astral.sh/uv/getting-started/installation/" >&2
+  exit 1
+fi
+
+if [ "${1:-}" = "--recreate" ]; then
+  rm -rf "$VENV"
+fi
+
+if [ -x "$VENV/bin/python" ]; then
+  current=$("$VENV/bin/python" -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")')
+  if [ "$current" != "$PYTHON_VERSION" ]; then
+    echo "$VENV uses Python $current but Home Assistant needs $PYTHON_VERSION." >&2
+    echo "Run: script/setup --recreate" >&2
+    exit 1
+  fi
+else
+  uv venv --python "$PYTHON_VERSION" "$VENV"
+fi
+
+# Same install as the CI test job: the HA test plugin (which pins homeassistant),
+# ruff, and the component's own requirements from manifest.json.
+VIRTUAL_ENV="$VENV" uv pip install \
+  -r requirements_test.txt \
+  $(jq -r '.requirements[]' custom_components/hive/manifest.json)
+
+echo
+"$VENV/bin/python" -c 'from homeassistant.const import __version__; print(f"Ready: Home Assistant {__version__}")'
+echo "Next: script/test, script/lint, script/develop"

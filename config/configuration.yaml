@@ -1,0 +1,8 @@
+# Local Home Assistant for script/develop. Everything else in config/ is ignored by git.
+default_config:
+
+logger:
+  default: info
+  logs:
+    custom_components.hive: debug
+    apyhiveapi: debug

@@ -1,6 +1,9 @@
 """Support for the Hive sensors."""
 
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import timedelta
+from typing import Any
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -16,70 +19,77 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.typing import StateType
 
 from . import HiveConfigEntry
 from .entity import HiveEntity
+from apyhiveapi import Hive
 
 PARALLEL_UPDATES = 0
 SCAN_INTERVAL = timedelta(seconds=15)
 
-SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
-    SensorEntityDescription(
+
+
+@dataclass(frozen=True)
+class HiveSensorEntityDescription(SensorEntityDescription):
+    """Describes Hive sensor entity."""
+
+    fn: Callable[[StateType], StateType] = lambda x: x
+
+
+SENSOR_TYPES: tuple[HiveSensorEntityDescription, ...] = (
+    HiveSensorEntityDescription(
         key="Battery",
         native_unit_of_measurement=PERCENTAGE,
         device_class=SensorDeviceClass.BATTERY,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
-    SensorEntityDescription(
+    HiveSensorEntityDescription(
         key="Power",
         native_unit_of_measurement=UnitOfPower.WATT,
         state_class=SensorStateClass.MEASUREMENT,
         device_class=SensorDeviceClass.POWER,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
-    SensorEntityDescription(
+    HiveSensorEntityDescription(
+        key="Current_Temperature",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    HiveSensorEntityDescription(
         key="Heating_Current_Temperature",
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        icon="mdi:thermometer",
     ),
-    SensorEntityDescription(
+    HiveSensorEntityDescription(
         key="Heating_Target_Temperature",
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         icon="mdi:thermometer",
     ),
-    SensorEntityDescription(
-        key="Heating_State",
-        icon="mdi:radiator",
-    ),
-    SensorEntityDescription(
+    HiveSensorEntityDescription(
         key="Heating_Mode",
-        icon="mdi:radiator",
+        device_class=SensorDeviceClass.ENUM,
+        options=["schedule", "manual", "off"],
+        translation_key="heating",
+        fn=lambda x: x.lower() if isinstance(x, str) else None,
     ),
-    SensorEntityDescription(
-        key="Heating_Boost",
-        icon="mdi:radiator",
-    ),
-    SensorEntityDescription(
-        key="Hotwater_State",
-        icon="mdi:water-pump",
-    ),
-    SensorEntityDescription(
+    HiveSensorEntityDescription(
         key="Hotwater_Mode",
-        icon="mdi:water-pump",
+        device_class=SensorDeviceClass.ENUM,
+        options=["schedule", "on", "off"],
+        translation_key="hot_water",
+        fn=lambda x: x.lower() if isinstance(x, str) else None,
     ),
-    SensorEntityDescription(
-        key="Hotwater_Boost",
-        icon="mdi:water-pump",
-    ),
-    SensorEntityDescription(
+    HiveSensorEntityDescription(
         key="Mode",
         icon="mdi:eye",
     ),
-    SensorEntityDescription(key="Availability", icon="mdi:check-circle"),
+    HiveSensorEntityDescription(key="Availability", icon="mdi:check-circle"),
 )
 
 
@@ -95,7 +105,7 @@ async def async_setup_entry(
         return
     async_add_entities(
         (
-            HiveSensorEntity(hive, dev, description)
+            HiveSensorEntity(hass, entry, hive, dev, description)
             for dev in devices
             for description in SENSOR_TYPES
             if dev["hiveType"] == description.key
@@ -107,9 +117,18 @@ async def async_setup_entry(
 class HiveSensorEntity(HiveEntity, SensorEntity):
     """Hive Sensor Entity."""
 
-    def __init__(self, hive, hive_device, entity_description):
+    entity_description: HiveSensorEntityDescription
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: HiveConfigEntry,
+        hive: Hive,
+        hive_device: dict[str, Any],
+        entity_description: HiveSensorEntityDescription,
+    ) -> None:
         """Initialise hive sensor."""
-        super().__init__(hive, hive_device)
+        super().__init__(hass, entry, hive, hive_device)
         self.entity_description = entity_description
 
     async def async_update(self):
@@ -119,9 +138,7 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
 
         if self.device["hiveType"] == "CurrentTemperature":
             self._attr_extra_state_attributes = await self.get_current_temp_sa()
-        elif self.device["hiveType"] == "Heating_State":
-            self._attr_extra_state_attributes = await self.get_heating_state_sa()
-        elif self.device["hiveType"] == "Heating_Mode":
+        elif self.device["hiveType"] in ("Heating_State", "Heating_Mode"):
             self._attr_extra_state_attributes = await self.get_heating_state_sa()
         elif self.device["hiveType"] == "Heating_Boost":
             s_a = {}
@@ -129,9 +146,7 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
                 minsend = await self.hive.heating.getBoostTime(self.device)
                 s_a.update({"Boost ends in": (str(minsend) + " minutes")})
             self._attr_extra_state_attributes = s_a
-        elif self.device["hiveType"] == "Hotwater_State":
-            self._attr_extra_state_attributes = await self.get_hotwater_state_sa()
-        elif self.device["hiveType"] == "Hotwater_Mode":
+        elif self.device["hiveType"] in ("Hotwater_State", "Hotwater_Mode"):
             self._attr_extra_state_attributes = await self.get_hotwater_state_sa()
         elif self.device["hiveType"] == "Hotwater_Boost":
             s_a = {}
@@ -145,8 +160,9 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
         else:
             self._attr_available = True
 
-        if self._attr_available:
-            self._attr_native_value = self.device["status"]["state"]
+        self._attr_native_value = self.entity_description.fn(
+            self.device.get("status", {}).get("state")
+        )
 
     async def get_current_temp_sa(self):
         """Get current heating temperature state attributes."""

@@ -1,7 +1,8 @@
 # Hive Custom Component
 
-![Pylint](https://github.com/Pyhive/HA-Hive-Custom-Component/workflows/Pylint/badge.svg)
-![GitHub Release](https://img.shields.io/github/v/release/Pyhive/HA-Hive-Custom-Component?display_name=tag&logo=Github)
+[![CI](https://github.com/Pyhass/Hive-Custom-Component/actions/workflows/ci.yml/badge.svg)](https://github.com/Pyhass/Hive-Custom-Component/actions/workflows/ci.yml)
+[![Compatibility](https://github.com/Pyhass/Hive-Custom-Component/actions/workflows/compat.yml/badge.svg)](https://github.com/Pyhass/Hive-Custom-Component/actions/workflows/compat.yml)
+![GitHub Release](https://img.shields.io/github/v/release/Pyhass/Hive-Custom-Component?display_name=tag&logo=Github)
 
 
 
@@ -20,6 +21,17 @@ sensors e.g `Living Room Lamp Battery Level`
   * Current State - Heating/Hotwater only
   * Boost State - Heating/Hotwater only
 
+## How this relates to the built-in Hive integration
+
+This component replaces Home Assistant's built-in Hive integration. It reuses the
+built-in code wherever it can and adds the extras above on top.
+
+Think of it as an opt-in fast channel. Fixes and new versions of the Hive library
+([`pyhive-integration`](https://pypi.org/project/pyhive-integration/)) usually reach
+this component before they reach Home Assistant itself. If you want to help test the
+newest changes, turn on beta releases for this repository in HACS. Betas may use
+pre-release versions of the library. Stable releases only use stable ones.
+
 For details on what the Home Assistant Hive component supports, please see below:
 
 [**>> Hive Component Documentation <<**](https://www.home-assistant.io/integrations/hive/)
@@ -27,7 +39,7 @@ For details on what the Home Assistant Hive component supports, please see below
 Issues and trouble reports should be reported in
 the issues tab:
 
-[**>> Report issues here <<**](https://github.com/Pyhive/HA-Hive-Custom-Component/issues)
+[**>> Report issues here <<**](https://github.com/Pyhass/Hive-Custom-Component/issues)
 
 ## Install
 
@@ -39,11 +51,13 @@ The recommended way to is to install via [HACS](https://hacs.xyz/).
 Once HACS has been installed and setup. You just need to navigate to the HACS panel and choose integrations.
 This will show and option to add an integration click it and search for Hive in the presented popup.
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Pyhass&repository=Hive-Custom-Component)
+
 Once installation is complete please follow the [setup section](#setup) to set the Hive integration up.
 
-### Manally
+### Manually
 
-To install the Hive integration manually you need to download the [latest version](https://github.com/Pyhive/HA-Hive-Custom-Component/releases/latest).
+To install the Hive integration manually you need to download the [latest version](https://github.com/Pyhass/Hive-Custom-Component/releases/latest).
 Once downloaded you will need to copy the Hive folder into the custom_components folder within your home assistant configuration, if this does not exist then the folder will need creating.
 
 Once installation is complete please follow the [setup section](#setup) to set the Hive integration up.
@@ -79,8 +93,33 @@ Hacs will auto notify you within the HACS panel that there is a pending update.
 
 ### Manual Update
 
-To update to the next version download the [latest version](https://github.com/Pyhive/HA-Hive-Custom-Component/releases/latest) again
+To update to the next version download the [latest version](https://github.com/Pyhass/Hive-Custom-Component/releases/latest) again
 and replace the current hive folder with the newly downloaded one.
 
 
 :warning: **Setting up this custom version will overwrite the default integration.**
+
+## Development
+
+Tests use [pytest-homeassistant-custom-component](https://github.com/MatthewFlamm/pytest-homeassistant-custom-component),
+which pins the Home Assistant version they run against. Python 3.14 is required.
+
+```bash
+uv venv -p 3.14 && source .venv/bin/activate
+uv pip install -r requirements_test.txt $(jq -r '.requirements[]' custom_components/hive/manifest.json)
+
+python -m pytest                     # tests
+ruff check . && ruff format --check  # lint
+python script/gen_translations.py    # regenerate translations/en.json after editing strings.json
+```
+
+### CI
+
+| Workflow | When | What |
+| --- | --- | --- |
+| `ci.yml` | PRs and pushes to master | HACS validation, hassfest, ruff, tests |
+| `compat.yml` | Nightly | Tests against the latest HA stable and beta, import check against HA dev |
+| `release.yml` | Release published | Checks the tag matches `manifest.json`, attaches `hive.zip` |
+| `pyhive_bump.yml` | Weekly, manual, or dispatched from Pyhive | Opens a PR bumping `pyhive-integration` |
+| `stale.yml` | Daily | Marks and closes inactive issues and PRs |
+| `delete_beta.yml` | Manual | Deletes old beta releases |

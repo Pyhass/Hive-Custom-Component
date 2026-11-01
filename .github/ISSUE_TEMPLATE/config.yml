@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/Pyhass/Hive-Custom-Component/security/advisories/new
+    about: Report privately so it can be fixed before it's public.
+  - name: Home Assistant Hive integration docs
+    url: https://www.home-assistant.io/integrations/hive/
+    about: Setup and usage of the Hive integration this component extends.

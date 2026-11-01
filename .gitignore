@@ -1,2 +1,12 @@
-__pycache__
-.venv
+__pycache__/
+*.py[cod]
+.venv/
+.venv-*/
+.pytest_cache/
+.ruff_cache/
+.coverage
+hive.zip
+
+# script/develop's Home Assistant instance
+config/*
+!config/configuration.yaml

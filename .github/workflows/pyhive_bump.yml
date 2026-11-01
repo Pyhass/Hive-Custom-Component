@@ -1,0 +1,91 @@
+# Opens a PR bumping pyhive-integration in manifest.json. Dependabot can't do
+# this because the requirement lives in manifest.json, not a requirements file.
+#
+# Triggers:
+#   - weekly check of PyPI for a new stable release
+#   - manually, optionally with a specific version (e.g. a beta)
+#   - from the Pyhive repo after it publishes, with a step like:
+#       - run: >-
+#           gh api repos/Pyhass/Hive-Custom-Component/dispatches
+#           -f event_type=pyhive-release
+#           -F "client_payload[version]=${{ github.ref_name }}"
+#         env:
+#           GH_TOKEN: ${{ secrets.HIVE_COMPONENT_DISPATCH_TOKEN }}
+#
+# PRs opened with the default GITHUB_TOKEN don't trigger CI. Add a BOT_TOKEN
+# secret (fine-grained PAT with contents + pull-requests write on this repo) so
+# CI runs on them; without it, close and reopen the PR to start CI.
+name: Bump pyhive-integration
+
+on:
+  schedule:
+    - cron: "23 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to bump to (blank = latest stable on PyPI)
+        required: false
+  repository_dispatch:
+    types: [pyhive-release]
+
+permissions:
+  contents: read
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Work out versions
+        id: versions
+        env:
+          REQUESTED: ${{ inputs.version || github.event.client_payload.version }}
+        run: |
+          current=$(jq -r '.requirements[] | select(startswith("pyhive-integration==")) | ltrimstr("pyhive-integration==")' custom_components/hive/manifest.json)
+          target="${REQUESTED#v}"
+          if [ -z "$target" ]; then
+            target=$(curl -fsS https://pypi.org/pypi/pyhive-integration/json | jq -r .info.version)
+          fi
+          # Make sure the version exists on PyPI before opening a PR for it.
+          curl -fsS "https://pypi.org/pypi/pyhive-integration/$target/json" > /dev/null
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+          echo "pyhive-integration: current $current, target $target"
+
+      - name: Update manifest.json
+        if: steps.versions.outputs.current != steps.versions.outputs.target
+        env:
+          TARGET: ${{ steps.versions.outputs.target }}
+        run: |
+          python3 - <<'EOF'
+          import os, pathlib, re
+          path = pathlib.Path("custom_components/hive/manifest.json")
+          text = path.read_text()
+          text, count = re.subn(
+              r'"pyhive-integration==[^"]+"',
+              f'"pyhive-integration=={os.environ["TARGET"]}"',
+              text,
+          )
+          assert count == 1, "pyhive-integration requirement not found"
+          path.write_text(text)
+          EOF
+
+      - name: Open pull request
+        if: steps.versions.outputs.current != steps.versions.outputs.target
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.BOT_TOKEN || github.token }}
+          branch: deps/pyhive-integration-${{ steps.versions.outputs.target }}
+          commit-message: "chore: bump pyhive-integration to ${{ steps.versions.outputs.target }}"
+          title: "chore: bump pyhive-integration to ${{ steps.versions.outputs.target }}"
+          body: |
+            Bumps `pyhive-integration` from `${{ steps.versions.outputs.current }}` to `${{ steps.versions.outputs.target }}`.
+
+            - Release notes: https://pypi.org/project/pyhive-integration/${{ steps.versions.outputs.target }}/
+            - The component `version` in manifest.json is **not** changed; bump it when releasing.
+          labels: dependencies
+          delete-branch: true
