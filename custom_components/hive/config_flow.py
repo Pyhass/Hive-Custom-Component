@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 import copy
+import logging
 from typing import Any
 
 from apyhiveapi import Auth
@@ -23,7 +24,6 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import CONF_PASSWORD, CONF_SCAN_INTERVAL, CONF_USERNAME
 from homeassistant.core import callback
-import logging
 
 from . import HiveConfigEntry
 from .const import (
@@ -52,7 +52,10 @@ def _sanitize_payload(payload: dict[str, Any]) -> dict[str, Any]:
             result: dict[str, Any] = {}
             for key, value in node.items():
                 key_lower = key.lower()
-                if any(part in key_lower for part in ("password", "token", "secret", "code", "session")):
+                if any(
+                    part in key_lower
+                    for part in ("password", "token", "secret", "code", "session")
+                ):
                     result[key] = _mask(value)
                 else:
                     result[key] = _walk(value)
@@ -128,7 +131,11 @@ class HiveFlowHandler(ConfigFlow, domain=DOMAIN):
                 auth_result = self.tokens.get("AuthenticationResult", {})
                 new_device = auth_result.get("NewDeviceMetadata") or {}
                 access_token = auth_result.get("AccessToken")
-                if new_device.get("DeviceGroupKey") and new_device.get("DeviceKey") and access_token:
+                if (
+                    new_device.get("DeviceGroupKey")
+                    and new_device.get("DeviceKey")
+                    and access_token
+                ):
                     # If Hive returned fresh device metadata directly from login, register it now
                     # so fallback device auth works when refresh tokens expire.
                     self.hive_auth.access_token = access_token
@@ -136,10 +143,16 @@ class HiveFlowHandler(ConfigFlow, domain=DOMAIN):
                     self.hive_auth.device_key = new_device["DeviceKey"]
                     try:
                         await self.hive_auth.device_registration(self.device_name)
-                        self.data["device_data"] = await self.hive_auth.get_device_data()
-                        _LOGGER.debug("Stored Hive device_data from login NewDeviceMetadata.")
+                        self.data[
+                            "device_data"
+                        ] = await self.hive_auth.get_device_data()
+                        _LOGGER.debug(
+                            "Stored Hive device_data from login NewDeviceMetadata."
+                        )
                     except HiveApiError:
-                        _LOGGER.warning("Hive device registration failed after login; continuing without device_data.")
+                        _LOGGER.warning(
+                            "Hive device registration failed after login; continuing without device_data."
+                        )
 
                 try:
                     return await self.async_setup_hive_entry()
