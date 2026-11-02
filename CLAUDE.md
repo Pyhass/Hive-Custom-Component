@@ -54,6 +54,8 @@ silence it.
 
 ## Working here
 
+- `dev` is the main and default branch. PRs target `dev`, and betas and stable
+  releases are tagged from it (`--target dev`). `master` is no longer used.
 - `script/setup`, `script/test`, `script/lint` (`--check` in CI). `.venv` must be
   Python 3.14 (`script/setup --recreate`).
 - Tests mock `apyhiveapi`. When the library changes, also exercise the real code:

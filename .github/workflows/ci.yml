@@ -1,4 +1,5 @@
-# Checks every PR and push to master. Make the jobs below required checks on master.
+# Checks every PR and push to dev, the main branch. Make the jobs below required
+# checks on dev.
 #
 # This workflow deliberately has no schedule: GitHub auto-disables scheduled
 # workflows after 60 days without repo activity, which also stops their
@@ -8,7 +9,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [master]
+    branches: [dev]
   workflow_dispatch:
 
 permissions:

@@ -28,24 +28,24 @@ Follow MAINTAINING.md → "Releasing", and the principles in `CLAUDE.md`. The ru
        | .venv/bin/python -c 'import sys; from packaging.version import Version; print(max(sys.stdin.read().split(), key=Version))'
      jq -r '.requirements[]' custom_components/hive/manifest.json
      ```
-     If it's newer than the pin, run `/bump-pyhive` for it first, and get that merged to `master`, unless the user decides to skip it. Check for an open `deps/pyhive-integration-*` PR before starting a new one.
-   - **Stable:** the pin must not be a pre-release. If `master` pins a pyhive beta, stop: either wait for a stable pyhive, or move the pin to the latest stable with `/bump-pyhive` first.
+     If it's newer than the pin, run `/bump-pyhive` for it first, and get that merged to `dev`, unless the user decides to skip it. Check for an open `deps/pyhive-integration-*` PR before starting a new one.
+   - **Stable:** the pin must not be a pre-release. If `dev` pins a pyhive beta, stop: either wait for a stable pyhive, or move the pin to the latest stable with `/bump-pyhive` first.
 
 3. **Check it's safe to ship.**
-   - `gh run list -w ci.yml -b master -L 1` and `gh run list -w compat.yml -L 1` must both be green. If either is red, stop and report. For a red Compatibility run, suggest `/triage-compat`.
+   - `gh run list -w ci.yml -b dev -L 1` and `gh run list -w compat.yml -L 1` must both be green. If either is red, stop and report. For a red Compatibility run, suggest `/triage-compat`.
    - A hassfest **warning** about `pyhive-integration` differing from core hive is expected (see `CLAUDE.md`). Only errors count.
    - `script/test` and `script/lint --check` must pass locally.
-   - Check `git log <last-tag>..origin/master --oneline`. If there's nothing to release, say so.
+   - Check `git log <last-tag>..origin/dev --oneline`. If there's nothing to release, say so.
 
-4. **Bump the manifest.** Change only the `version` value in `manifest.json`. Don't touch `requirements`; that's `/bump-pyhive`. The change must reach `master` before tagging:
+4. **Bump the manifest.** Change only the `version` value in `manifest.json`. Don't touch `requirements`; that's `/bump-pyhive`. The change must reach `dev` before tagging:
    - If the user asks, make a branch `release/<version>`, commit it, and open a PR.
    - Otherwise hand the change over for them to commit.
-   - Wait until it's merged, then check with `git fetch && git show origin/master:custom_components/hive/manifest.json | jq -r '.version, .requirements[]'`.
+   - Wait until it's merged, then check with `git fetch && git show origin/dev:custom_components/hive/manifest.json | jq -r '.version, .requirements[]'`.
 
 5. **Publish** (only after the user confirms the tag):
    ```bash
-   gh release create <version> --target master --generate-notes --prerelease   # beta
-   gh release create <version> --target master --generate-notes --latest       # stable
+   gh release create <version> --target dev --generate-notes --prerelease   # beta
+   gh release create <version> --target dev --generate-notes --latest       # stable
    ```
    For a beta, add the `pyhive-integration` version to the notes, and say whether it's ahead of core's.
 

@@ -117,7 +117,7 @@ python script/gen_translations.py    # regenerate translations/en.json after edi
 
 | Workflow | When | What |
 | --- | --- | --- |
-| `ci.yml` | PRs and pushes to master | HACS validation, hassfest, ruff, tests |
+| `ci.yml` | PRs and pushes to dev | HACS validation, hassfest, ruff, tests |
 | `compat.yml` | Nightly | Tests against the latest HA stable and beta, import check against HA dev |
 | `release.yml` | Release published | Checks the tag matches `manifest.json`, attaches `hive.zip` |
 | `pyhive_bump.yml` | Weekly, manual, or dispatched from Pyhive | Opens a PR bumping `pyhive-integration` |
