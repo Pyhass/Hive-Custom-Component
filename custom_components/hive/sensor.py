@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
 
+from apyhiveapi import Hive
+
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -23,11 +25,9 @@ from homeassistant.helpers.typing import StateType
 
 from . import HiveConfigEntry
 from .entity import HiveEntity
-from apyhiveapi import Hive
 
 PARALLEL_UPDATES = 0
 SCAN_INTERVAL = timedelta(seconds=15)
-
 
 
 @dataclass(frozen=True)
