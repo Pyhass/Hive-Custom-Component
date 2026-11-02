@@ -21,7 +21,7 @@ The full version is in [CLAUDE.md](CLAUDE.md). Everything below follows from the
 
 | When | Workflow | What it does | If it fails |
 |---|---|---|---|
-| Every PR and every push to `master` | `ci.yml` | HACS validation, hassfest (through `.github/scripts/hassfest.py`, see [Hassfest and the pyhive pin](#hassfest-and-the-pyhive-pin)), lint and tests. A push to master also re-enables scheduled workflows that GitHub turned off. | Fix it in the PR before merging |
+| Every PR and every push to `dev` | `ci.yml` | HACS validation, hassfest (through `.github/scripts/hassfest.py`, see [Hassfest and the pyhive pin](#hassfest-and-the-pyhive-pin)), lint and tests. A push to dev also re-enables scheduled workflows that GitHub turned off. | Fix it in the PR before merging |
 | Daily, 04:17 UTC | `compat.yml` | Tests against the newest HA stable and beta, plus an import check against HA `dev` | [Compatibility is red](#compatibility-is-red) |
 | Daily, 05:29 UTC | `stale.yml` | Labels issues and PRs inactive for 60 days, then closes issues after 30 more days and PRs after 14 | Add the `pinned` label to keep something open |
 | Monday, 06:23 UTC | `pyhive_bump.yml` | Opens a PR if a newer `pyhive-integration` is on PyPI | [Dependency PRs](#dependency-prs) |
@@ -47,19 +47,19 @@ who opt in. Stable releases go to everyone.
        | .venv/bin/python -c 'import sys; from packaging.version import Version; print(max(sys.stdin.read().split(), key=Version))'
      ```
 
-   - **Stable:** the pin must be a stable version. If `master` pins a pyhive beta, wait
+   - **Stable:** the pin must be a stable version. If `dev` pins a pyhive beta, wait
      for a stable pyhive, or move the pin back to the latest stable first.
-2. Open a PR that sets `version` in `custom_components/hive/manifest.json`. Merge it
+2. Open a PR against `dev` that sets `version` in `custom_components/hive/manifest.json`. Merge it
    once CI passes.
-3. Check that the last Compatibility run on `master` passed, so you aren't shipping
+3. Check that the last Compatibility run passed (it runs on `dev`), so you aren't shipping
    something current HA versions break.
 4. Publish the release from the same version:
 
    ```bash
    # beta: HACS offers it only to users who opt into betas
-   gh release create 2026.10.0b1 --target master --prerelease --generate-notes
+   gh release create 2026.10.0b1 --target dev --prerelease --generate-notes
    # stable
-   gh release create 2026.10.0 --target master --latest --generate-notes
+   gh release create 2026.10.0 --target dev --latest --generate-notes
    ```
 
    For a beta, mention the `pyhive-integration` version in the release notes.
@@ -151,7 +151,8 @@ users on older HA versions.
 
 ## Repo settings (one-time; check they're still on)
 
-- **Branch protection on `master`:**
+- **Branch protection on `dev`** (the default branch, which all PRs and releases
+  go through):
   - Require the checks *HACS validation*, *Hassfest*, *Lint* and *Tests*.
   - Turn on *Require review from Code Owners*.
 - **Secret `BOT_TOKEN`:** a fine-grained PAT with Contents and Pull requests write
@@ -161,7 +162,7 @@ users on older HA versions.
   It triggers a bump PR as soon as Pyhive releases.
 - **Scheduled workflows enabled:**
   - Check with `gh workflow list --all`.
-  - CI switches them back on after the next push to master, but if the repo goes
+  - CI switches them back on after the next push to dev, but if the repo goes
     quiet for 60 days they stop again.
 
 ## Known issues in the code

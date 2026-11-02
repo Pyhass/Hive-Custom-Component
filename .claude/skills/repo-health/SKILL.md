@@ -17,20 +17,20 @@ gh pr list -R $R --state open --json number,title,author,labels,statusCheckRollu
 gh issue list -R $R --label no-issue-activity
 gh pr list -R $R --label no-pr-activity
 gh release list -R $R -L 5
-git fetch -q origin && git log $(gh release list -R $R -L1 --exclude-pre-releases --json tagName -q '.[0].tagName')..origin/master --oneline
-gh api repos/$R/branches/master/protection 2>&1 | jq '{checks: .required_status_checks.contexts, code_owners: .required_pull_request_reviews.require_code_owner_reviews}'
+git fetch -q origin && git log $(gh release list -R $R -L1 --exclude-pre-releases --json tagName -q '.[0].tagName')..origin/dev --oneline
+gh api repos/$R/branches/dev/protection 2>&1 | jq '{checks: .required_status_checks.contexts, code_owners: .required_pull_request_reviews.require_code_owner_reviews}'
 gh secret list -R $R                                          # expect BOT_TOKEN
 ```
 (The protection and secrets calls need admin access. If they fail, say so rather than guessing.)
 
 Compare what you find with MAINTAINING.md:
-- **Workflows:** all active, with no `disabled_inactivity`. The latest CI run on master and the latest Compatibility run should both be green. The last Compatibility run should be under ~26 hours old.
+- **Workflows:** all active, with no `disabled_inactivity`. The latest CI run on dev and the latest Compatibility run should both be green. The last Compatibility run should be under ~26 hours old.
 - **Bot PRs:** Dependabot and pyhive bump PRs with no checks at all mean `BOT_TOKEN` is missing (for pyhive ones). PRs failing checks need attention. Anything older than about 2 weeks is going stale.
-- **Unreleased commits on master:** suggest a release if there are user-facing changes.
+- **Unreleased commits on dev:** suggest a release if there are user-facing changes.
 - **Branch protection:** the required checks should be `HACS validation`, `Hassfest`, `Lint` and `Tests`, with code owner review on.
 - **Secrets:** `BOT_TOKEN` should be present.
 - **Hassfest:** a warning that `pyhive-integration` differs from core hive is expected (see `CLAUDE.md`), so don't report it as a problem.
-- **pyhive-integration:** compare the manifest pin with core hive's pin and with the newest version on PyPI, pre-releases included. A newer pyhive beta than the pin is a candidate for the next component beta (`/bump-pyhive`, then `/release`). A pre-release pin on `master` blocks stable releases until it's moved to a stable version.
+- **pyhive-integration:** compare the manifest pin with core hive's pin and with the newest version on PyPI, pre-releases included. A newer pyhive beta than the pin is a candidate for the next component beta (`/bump-pyhive`, then `/release`). A pre-release pin on `dev` blocks stable releases until it's moved to a stable version.
 - **Latest beta release:** the tag should match the `version` in its manifest (`git show <tag>:custom_components/hive/manifest.json | jq -r .version`).
 - **Pinned HA:** compare the HA version in the `requirements_test.txt` comment with the latest stable on PyPI (`curl -fsS https://pypi.org/pypi/homeassistant/json | jq -r .info.version`). A gap of more than one minor release means the Dependabot PR is stuck.
 
