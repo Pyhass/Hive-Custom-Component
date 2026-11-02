@@ -60,7 +60,8 @@ Add or update a test with every behaviour change.
 
 ## Pull requests
 
-- Branch from `master` and open the PR against `master`.
+- Branch from `dev` and open the PR against `dev`, the main branch. Betas and stable
+  releases are both cut from `dev`.
 - CI must pass: HACS validation, hassfest, lint and tests.
 - @KJonline is asked to review automatically.
 - Don't bump `version` in `manifest.json` unless the PR is meant to be released
