@@ -19,15 +19,38 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers import aiohttp_client, device_registry as dr
+from homeassistant.helpers import (
+    aiohttp_client,
+    config_validation as cv,
+    device_registry as dr,
+)
 from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN, PLATFORM_LOOKUP, PLATFORMS
 from .entity import HiveEntity
 
+try:
+    # Home Assistant 2026.11 moved the boost_* entity services out of the
+    # climate / water_heater platforms (which this component re-exports) into
+    # hive/services.py, registered from core's async_setup. This component
+    # replaces the hive domain, so core's async_setup never runs: call it here.
+    from homeassistant.components.hive.services import async_setup_services
+except ImportError:  # Home Assistant < 2026.11: the platforms register them.
+    async_setup_services = None
+
 _LOGGER = logging.getLogger(__name__)
 
 type HiveConfigEntry = ConfigEntry[Hive]
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Set up the Hive integration."""
+    if async_setup_services is not None:
+        async_setup_services(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: HiveConfigEntry) -> bool:
