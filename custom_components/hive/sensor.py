@@ -4,8 +4,12 @@ import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+import logging
 import time
 from typing import Any
+
+from aiohttp import ClientError
+from apyhiveapi.helper.hive_exceptions import HiveApiError
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -30,6 +34,8 @@ from . import HiveConfigEntry
 from .const import DOMAIN
 from .entity import HiveEntity
 from apyhiveapi import Hive
+
+_LOGGER = logging.getLogger(__name__)
 
 HOLIDAY_MODE_SCAN_INTERVAL = timedelta(minutes=30)
 
@@ -400,7 +406,15 @@ class _HiveHolidayModeSensorBase(SensorEntity):
 
     async def async_update(self) -> None:
         """Fetch the latest Holiday Mode status from Hive."""
-        result = await self._data.async_get()
+        # The platform adds these with update_before_add, so an exception here
+        # (e.g. Hive's cloud timing out at boot) would stop the entity being
+        # added at all until the next restart. Go unavailable instead; the poll
+        # interval and dispatcher refreshes bring it back.
+        try:
+            result = await self._data.async_get()
+        except (TimeoutError, ClientError, HiveApiError) as err:
+            _LOGGER.warning("Failed to fetch Hive holiday mode: %r", err)
+            result = None
         if result is None:
             self._attr_available = False
             return

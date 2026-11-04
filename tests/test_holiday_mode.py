@@ -120,6 +120,27 @@ async def test_holiday_sensors_unavailable_without_data(
         assert hass.states.get(_entity_id(hass, key)).state == STATE_UNAVAILABLE
 
 
+@pytest.mark.parametrize("error", [TimeoutError(), HiveApiError()])
+async def test_holiday_sensors_survive_fetch_error_at_setup(
+    hass: HomeAssistant,
+    mock_hive: MagicMock,
+    mock_config_entry: MockConfigEntry,
+    error: Exception,
+) -> None:
+    """A failed first fetch still adds the sensors, unavailable, and they recover."""
+    mock_hive.hub.get_holiday_mode = AsyncMock(side_effect=error)
+    await _setup(hass, mock_config_entry)
+
+    for key in ("Mode", "DateStart", "DateEnd"):
+        assert hass.states.get(_entity_id(hass, key)).state == STATE_UNAVAILABLE
+
+    mock_hive.hub.get_holiday_mode = AsyncMock(return_value=SCHEDULED)
+    await _refresh(hass)
+
+    assert hass.states.get(_entity_id(hass, "Mode")).state == "scheduled"
+    assert hass.states.get(_entity_id(hass, "DateStart")).state == START.isoformat()
+
+
 async def test_set_holiday_mode(
     hass: HomeAssistant, mock_hive: MagicMock, mock_config_entry: MockConfigEntry
 ) -> None:
