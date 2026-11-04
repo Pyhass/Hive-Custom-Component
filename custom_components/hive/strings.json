@@ -101,6 +101,28 @@
           "description": "Set the boost function on or off."
         }
       }
+    },
+    "set_holiday_mode": {
+      "name": "Set holiday mode",
+      "description": "Schedules Hive's whole-home holiday mode, holding a frost-protection temperature for the given period.",
+      "fields": {
+        "start": {
+          "name": "Start",
+          "description": "When holiday mode should begin."
+        },
+        "end": {
+          "name": "End",
+          "description": "When holiday mode should end."
+        },
+        "temperature": {
+          "name": "Temperature",
+          "description": "The frost-protection temperature to hold during holiday mode."
+        }
+      }
+    },
+    "cancel_holiday_mode": {
+      "name": "Cancel holiday mode",
+      "description": "Cancels any scheduled or currently active Hive holiday mode."
     }
   },
   "entity": {

@@ -26,6 +26,12 @@
       },
       "boost_hot_water": {
         "service": "mdi:water-boiler"
+      },
+      "set_holiday_mode": {
+        "service": "mdi:palm-tree"
+      },
+      "cancel_holiday_mode": {
+        "service": "mdi:palm-tree-outline"
       }
     }
   }

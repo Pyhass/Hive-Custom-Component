@@ -8,7 +8,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 
-from .conftest import make_device
+from .conftest import HOLIDAY_SENSORS, make_device
 
 CONTACT = make_device(
     "contactsensor",
@@ -82,4 +82,4 @@ async def test_heating_and_hot_water_state_sensors(
         hass.states.get("binary_sensor.hot_water_hotwater_boost").state
         == STATE_UNAVAILABLE
     )
-    assert hass.states.async_entity_ids("sensor") == []
+    assert set(hass.states.async_entity_ids("sensor")) == HOLIDAY_SENSORS
