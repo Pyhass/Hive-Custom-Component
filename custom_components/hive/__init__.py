@@ -51,8 +51,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: HiveConfigEntry) -> bool
     except HiveConnectionError as error:
         _LOGGER.error("Could not fetch devices from Hive: %s", error)
         raise ConfigEntryNotReady from error
-    except (HiveReauthRequired, HiveUnknownConfiguration, HiveInvalidDeviceAuthentication) as err:
-        raise ConfigEntryAuthFailed from err
+    except (
+        HiveReauthRequired,
+        HiveUnknownConfiguration,
+        HiveInvalidDeviceAuthentication,
+    ) as err:
 
     device_registry = dr.async_get(hass)
     device_registry.async_get_or_create(
