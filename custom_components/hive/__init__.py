@@ -11,6 +11,7 @@ from aiohttp.web_exceptions import HTTPException
 from apyhiveapi import Auth, Hive
 from apyhiveapi.helper.hive_exceptions import (
     HiveConnectionError,
+    HiveInvalidDeviceAuthentication,
     HiveReauthRequired,
     HiveUnknownConfiguration,
 )
@@ -50,7 +51,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: HiveConfigEntry) -> bool
     except HiveConnectionError as error:
         _LOGGER.error("Could not fetch devices from Hive: %s", error)
         raise ConfigEntryNotReady from error
-    except (HiveReauthRequired, HiveUnknownConfiguration) as err:
+    except (
+        HiveReauthRequired,
+        HiveUnknownConfiguration,
+        HiveInvalidDeviceAuthentication,
+    ) as err:
         raise ConfigEntryAuthFailed from err
 
     device_registry = dr.async_get(hass)
