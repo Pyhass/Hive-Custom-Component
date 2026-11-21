@@ -5,7 +5,7 @@
 # users do.
 #   stable/beta: full test suite on the newest release in that channel
 #                (skipped for beta when no beta is newer than stable).
-#   dev:         import smoke test against core's dev branch (the test plugin
+#   dev:         import smoke test against core's dev branch (the test package
 #                isn't published for dev builds).
 name: Compatibility
 
@@ -50,7 +50,7 @@ jobs:
         if: steps.ha.outputs.skip != 'true'
         run: >-
           uv pip install
-          "pytest-homeassistant-custom-component==${{ steps.ha.outputs.test_plugin }}"
+          "pytest-homeassistant==${{ steps.ha.outputs.test_package }}"
           $(jq -r '.requirements[]' custom_components/hive/manifest.json)
       - name: Run tests against Home Assistant ${{ steps.ha.outputs.homeassistant }}
         if: steps.ha.outputs.skip != 'true'

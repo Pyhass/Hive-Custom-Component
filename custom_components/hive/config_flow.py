@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 import copy
-from typing import Any
+import logging
+from typing import Any, override
 
 from apyhiveapi import Auth
 from apyhiveapi.helper.hive_exceptions import (
@@ -23,7 +24,6 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import CONF_PASSWORD, CONF_SCAN_INTERVAL, CONF_USERNAME
 from homeassistant.core import callback
-import logging
 
 from . import HiveConfigEntry
 from .const import (
@@ -52,7 +52,10 @@ def _sanitize_payload(payload: dict[str, Any]) -> dict[str, Any]:
             result: dict[str, Any] = {}
             for key, value in node.items():
                 key_lower = key.lower()
-                if any(part in key_lower for part in ("password", "token", "secret", "code", "session")):
+                if any(
+                    part in key_lower
+                    for part in ("password", "token", "secret", "code", "session")
+                ):
                     result[key] = _mask(value)
                 else:
                     result[key] = _walk(value)
@@ -73,10 +76,11 @@ class HiveFlowHandler(ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         """Initialize the config flow."""
         self.data: dict[str, Any] = {}
-        self.tokens: dict[str, str] = {}
+        self.tokens: dict[str, Any] = {}
         self.device_registration: bool = False
         self.device_name = "Home Assistant"
 
+    @override
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -128,7 +132,11 @@ class HiveFlowHandler(ConfigFlow, domain=DOMAIN):
                 auth_result = self.tokens.get("AuthenticationResult", {})
                 new_device = auth_result.get("NewDeviceMetadata") or {}
                 access_token = auth_result.get("AccessToken")
-                if new_device.get("DeviceGroupKey") and new_device.get("DeviceKey") and access_token:
+                if (
+                    new_device.get("DeviceGroupKey")
+                    and new_device.get("DeviceKey")
+                    and access_token
+                ):
                     # If Hive returned fresh device metadata directly from login, register it now
                     # so fallback device auth works when refresh tokens expire.
                     self.hive_auth.access_token = access_token
@@ -136,10 +144,16 @@ class HiveFlowHandler(ConfigFlow, domain=DOMAIN):
                     self.hive_auth.device_key = new_device["DeviceKey"]
                     try:
                         await self.hive_auth.device_registration(self.device_name)
-                        self.data["device_data"] = await self.hive_auth.get_device_data()
-                        _LOGGER.debug("Stored Hive device_data from login NewDeviceMetadata.")
+                        self.data[
+                            "device_data"
+                        ] = await self.hive_auth.get_device_data()
+                        _LOGGER.debug(
+                            "Stored Hive device_data from login NewDeviceMetadata."
+                        )
                     except HiveApiError:
-                        _LOGGER.warning("Hive device registration failed after login; continuing without device_data.")
+                        _LOGGER.warning(
+                            "Hive device registration failed after login; continuing without device_data."
+                        )
 
                 try:
                     return await self.async_setup_hive_entry()
@@ -185,12 +199,23 @@ class HiveFlowHandler(ConfigFlow, domain=DOMAIN):
             if not errors:
                 _LOGGER.debug("2FA successful")
                 if self.source == SOURCE_REAUTH:
-                    device_registered = await self.hive_auth.is_device_registered()
-                    if device_registered:
-                        return await self.async_setup_hive_entry()
-
-                self.device_registration = True
-                return await self.async_step_configuration()
+                    try:
+                        device_registered = await self.hive_auth.is_device_registered()
+                    except HiveApiError as err:
+                        _LOGGER.debug(
+                            "Failed to check whether the Hive device"
+                            " is registered during reauthentication: %s",
+                            err,
+                        )
+                        errors["base"] = "no_internet_available"
+                    else:
+                        if device_registered:
+                            return await self.async_setup_hive_entry()
+                        self.device_registration = True
+                        return await self.async_step_configuration()
+                else:
+                    self.device_registration = True
+                    return await self.async_step_configuration()
 
         schema = vol.Schema({vol.Required(CONF_CODE): str})
         return self.async_show_form(step_id="2fa", data_schema=schema, errors=errors)
@@ -203,10 +228,11 @@ class HiveFlowHandler(ConfigFlow, domain=DOMAIN):
 
         if user_input:
             if self.device_registration:
+                _LOGGER.debug("Attempting to register device")
                 self.device_name = user_input["device_name"]
                 await self.hive_auth.device_registration(user_input["device_name"])
                 self.data["device_data"] = await self.hive_auth.get_device_data()
-
+                _LOGGER.debug("Device registration successful")
             try:
                 return await self.async_setup_hive_entry()
             except UnknownHiveError:
@@ -225,6 +251,8 @@ class HiveFlowHandler(ConfigFlow, domain=DOMAIN):
         if "AuthenticationResult" not in self.tokens:
             raise UnknownHiveError
 
+        # Setup the config entry
+        _LOGGER.debug("Setting up Hive entry")
         self.data["tokens"] = self.tokens
         if self.source == SOURCE_REAUTH:
             return self.async_update_reload_and_abort(
@@ -239,10 +267,12 @@ class HiveFlowHandler(ConfigFlow, domain=DOMAIN):
         self, entry_data: Mapping[str, Any]
     ) -> ConfigFlowResult:
         """Re Authenticate a user."""
+        self.data = dict(entry_data)
         data = {
             CONF_USERNAME: entry_data[CONF_USERNAME],
             CONF_PASSWORD: entry_data[CONF_PASSWORD],
         }
+        _LOGGER.debug("Reauthenticating user")
         return await self.async_step_user(data)
 
     @staticmethod

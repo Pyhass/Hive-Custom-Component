@@ -3,13 +3,9 @@
 from unittest.mock import MagicMock
 
 from aiohttp.web_exceptions import HTTPServiceUnavailable
-from apyhiveapi.helper.hive_exceptions import (
-    HiveConnectionError,
-    HiveReauthRequired,
-    HiveUnknownConfiguration,
-)
+from apyhiveapi.helper.hive_exceptions import HiveReauthRequired
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from homeassistant.config_entries import SOURCE_REAUTH, ConfigEntryState
 from homeassistant.const import CONF_SCAN_INTERVAL
@@ -48,10 +44,10 @@ async def test_setup_and_unload(
 @pytest.mark.parametrize(
     ("exception", "state", "reauth"),
     [
+        # pyhive-integration 2.0 adds HiveConnectionError (retry) and
+        # HiveUnknownConfiguration (reauth). Add them back with that bump.
         (HTTPServiceUnavailable(), ConfigEntryState.SETUP_RETRY, False),
-        (HiveConnectionError(), ConfigEntryState.SETUP_RETRY, False),
         (HiveReauthRequired(), ConfigEntryState.SETUP_ERROR, True),
-        (HiveUnknownConfiguration(), ConfigEntryState.SETUP_ERROR, True),
     ],
 )
 async def test_setup_failures(

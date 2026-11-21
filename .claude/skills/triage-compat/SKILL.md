@@ -15,20 +15,20 @@ gh run list -w compat.yml -L 5
 gh run view <run-id>                       # which jobs failed
 gh run view <run-id> --log-failed | tail -200
 ```
-From the log, note the job and the HA version. The "Find Home Assistant … release" step prints `homeassistant=` and `test_plugin=`.
+From the log, note the job and the HA version. The "Find Home Assistant … release" step prints `homeassistant=` and `test_package=`.
 
 Map it using the table in MAINTAINING.md → "Compatibility is red":
 - **stable** fails: users are broken now, so treat it as urgent.
 - **beta** fails: must be fixed before the next monthly HA release.
 - **dev** smoke import fails: an import was renamed or removed upstream.
-- The resolver step fails with "No pytest-homeassistant-custom-component release pins…": the plugin isn't published yet. Rerun later with `gh run rerun <id> --failed`. There's nothing to fix.
+- The resolver step fails with "No pytest-homeassistant==… on PyPI yet": the test package isn't published yet. Rerun later with `gh run rerun <id> --failed`. There's nothing to fix.
 - **HACS/hassfest** fails: follow the validator's message. A `[REQUIREMENTS]` message about `pyhive-integration` differing from core hive is expected, and `.github/scripts/hassfest.py` reports it as a warning (see `CLAUDE.md`). If it's failing on that, hassfest has reworded the message, so update the `ALLOWED` pattern in that script. Don't loosen the pin.
 
 ## 2. Reproduce locally
 Use a separate venv so `.venv` (which matches CI's pinned HA) stays untouched:
 ```bash
 VENV=.venv-ha-beta script/setup
-VIRTUAL_ENV=.venv-ha-beta uv pip install "pytest-homeassistant-custom-component==<test_plugin>"
+VIRTUAL_ENV=.venv-ha-beta uv pip install "pytest-homeassistant==<test_package>"
 VENV=.venv-ha-beta script/test -x
 ```
 For a dev failure, run the smoke test instead:

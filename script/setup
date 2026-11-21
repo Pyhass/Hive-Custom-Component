@@ -25,7 +25,13 @@ else
   uv venv --python "$PYTHON_VERSION" "$VENV"
 fi
 
-# Same install as the CI test job: the HA test plugin (which pins homeassistant),
+# pytest-homeassistant replaced pytest-homeassistant-custom-component in HA 2026.11,
+# and the two can't be installed together. Remove the old one from older venvs.
+if "$VENV/bin/python" -c 'import importlib.util as u, sys; sys.exit(u.find_spec("pytest_homeassistant_custom_component") is None)'; then
+  VIRTUAL_ENV="$VENV" uv pip uninstall pytest-homeassistant-custom-component
+fi
+
+# Same install as the CI test job: the HA test package (which pins homeassistant),
 # ruff, and the component's own requirements from manifest.json.
 VIRTUAL_ENV="$VENV" uv pip install \
   -r requirements_test.txt \

@@ -83,14 +83,14 @@ break the component with no change here. Open the failing run
 | **Tests (HA stable)** | Users on the latest HA are probably broken now | Fix first, and release a patch |
 | **Tests (HA beta)** | The next HA release (first Wednesday of the month) will break it | Fix before that release. Ship a beta if needed |
 | **Import smoke test (HA dev)** | Something the component imports was renamed or removed in core | Adapt before it reaches beta |
-| **Find Home Assistant … release** step | The test plugin for a brand-new HA release isn't on PyPI yet | Usually fixes itself within a day. Rerun it |
+| **Find Home Assistant … release** step | `pytest-homeassistant` for a brand-new HA release isn't on PyPI yet | Home Assistant publishes both together, so rerun it |
 | **HACS and hassfest** | New validation rules | Update the manifest or repo structure as it says. A pyhive `[REQUIREMENTS]` warning is expected; see [Hassfest and the pyhive pin](#hassfest-and-the-pyhive-pin) |
 
 To reproduce locally, install the HA version that failed into a separate venv:
 
 ```bash
 VENV=.venv-ha-beta script/setup
-VIRTUAL_ENV=.venv-ha-beta uv pip install "pytest-homeassistant-custom-component==<test_plugin from the run log>"
+VIRTUAL_ENV=.venv-ha-beta uv pip install "pytest-homeassistant==<homeassistant from the run log>"
 VENV=.venv-ha-beta script/test
 ```
 
@@ -128,9 +128,8 @@ would break a user's installation. If hassfest rewords these messages, update th
 
 If `pyhive-integration` ever appears in HA's `homeassistant/package_constraints.txt`,
 HA will refuse to install a different version, and the fast channel needs rethinking.
-- **`pytest-homeassistant-custom-component`** (Dependabot): this moves the HA version CI
-  tests against. Update the comment in `requirements_test.txt` to say which HA
-  version it pins. If HA has raised its minimum Python version, see below.
+- **`pytest-homeassistant`** (Dependabot): Home Assistant's own test package. Its
+  version is the HA version CI tests against, so bumping it moves that HA version. If HA has raised its minimum Python version, see below.
 - **`ruff`** (Dependabot): if lint fails, run `script/lint` on the branch and push.
 - **GitHub Actions** (Dependabot, grouped): merge once CI passes.
 
@@ -147,7 +146,18 @@ Then run `script/setup --recreate`.
 ### When dropping support for old Home Assistant versions
 
 Raise `homeassistant` in `hacs.json`. It stops HACS offering new releases to
-users on older HA versions.
+users on older HA versions. The minimum is currently **2026.11.0**.
+
+Then remove whatever only existed for the versions you dropped:
+
+- `try`/`except ImportError` fallbacks and version checks in `custom_components/hive`.
+- Any core change that was skipped only because older versions lacked the API
+  (the `sync-with-core` skill lists these when it skips them).
+
+`tests/conftest.py` reads the minimum from `hacs.json` and stops the test run if
+Home Assistant is older, so CI can't quietly keep testing a dropped version. If
+that fires, bump `pytest-homeassistant` in `requirements_test.txt` to a supported
+HA version.
 
 ## Repo settings (one-time; check they're still on)
 
@@ -187,3 +197,4 @@ section above.
 | `/triage-compat` | Find out why Compatibility is red, reproduce it locally and fix it |
 | `/bump-pyhive` | Move to a new `pyhive-integration` (stable or beta), and check whether its changes affect this component |
 | `/repo-health` | Check workflows, recent runs, open bot PRs, branch protection and secrets in one report |
+| `/sync-with-core` | Fetch the latest core hive integration and merge its changes into this repo, keeping our own differences. `/sync-with-core full` compares every file, not just what core changed. Leaves everything uncommitted for review |

@@ -1,5 +1,9 @@
-# Pins the Home Assistant version the tests run against (0.13.367 -> homeassistant 2026.9.4).
+# pytest-homeassistant is Home Assistant's own test package (it replaced
+# pytest-homeassistant-custom-component in 2026.11). Its version is the Home
+# Assistant version it pins, so this line sets the HA version the tests run
+# against. It must be at or above the hacs.json minimum (2026.11.0), or
+# tests/conftest.py stops the run.
 # Bumped by Dependabot; the nightly compat workflow also tests the latest stable and beta.
 
 ruff==0.17.3
-pytest-homeassistant-custom-component==0.13.370
+pytest-homeassistant==2026.11.2
