@@ -3,7 +3,10 @@
 from unittest.mock import MagicMock
 
 from aiohttp.web_exceptions import HTTPServiceUnavailable
-from apyhiveapi.helper.hive_exceptions import HiveReauthRequired
+from apyhiveapi.helper.hive_exceptions import (
+    HiveInvalidDeviceAuthentication,
+    HiveReauthRequired,
+)
 import pytest
 from pytest_homeassistant.common import MockConfigEntry
 
@@ -50,6 +53,7 @@ async def test_setup_and_unload(
         # HiveUnknownConfiguration (reauth). Add them back with that bump.
         (HTTPServiceUnavailable(), ConfigEntryState.SETUP_RETRY, False),
         (HiveReauthRequired(), ConfigEntryState.SETUP_ERROR, True),
+        (HiveInvalidDeviceAuthentication(), ConfigEntryState.SETUP_ERROR, True),
     ],
 )
 async def test_setup_failures(

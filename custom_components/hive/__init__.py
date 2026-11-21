@@ -6,7 +6,10 @@ from typing import Any, Concatenate
 
 from aiohttp.web_exceptions import HTTPException
 from apyhiveapi import Auth, Hive
-from apyhiveapi.helper.hive_exceptions import HiveReauthRequired
+from apyhiveapi.helper.hive_exceptions import (
+    HiveInvalidDeviceAuthentication,
+    HiveReauthRequired,
+)
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_SCAN_INTERVAL, Platform
@@ -56,7 +59,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: HiveConfigEntry) -> None
         raise ConfigEntryNotReady(
             f"Could not connect to the internet: {error}"
         ) from error
-    except HiveReauthRequired as err:
+    except (HiveReauthRequired, HiveInvalidDeviceAuthentication) as err:
+        # HiveInvalidDeviceAuthentication: the refresh token expired and this
+        # device isn't registered for device login, so the user must sign in
+        # again with 2FA. Without this, the reauth flow is never offered (#224).
         raise ConfigEntryAuthFailed from err
 
     hub_data = devices["parent"][0]
