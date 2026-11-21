@@ -25,7 +25,7 @@ async def _setup(hass: HomeAssistant, entry: MockConfigEntry) -> None:
 async def test_battery_sensor(
     hass: HomeAssistant, mock_hive: MagicMock, mock_config_entry: MockConfigEntry
 ) -> None:
-    """Battery level is exposed as a diagnostic percentage sensor."""
+    """Battery level is a diagnostic percentage sensor with long-term statistics."""
     await _setup(hass, mock_config_entry)
 
     state = hass.states.get("sensor.lounge_trv_battery")
@@ -33,6 +33,7 @@ async def test_battery_sensor(
     assert state.state == "87"
     assert state.attributes["unit_of_measurement"] == PERCENTAGE
     assert state.attributes["device_class"] == "battery"
+    assert state.attributes["state_class"] == "measurement"
 
     entry = er.async_get(hass).async_get("sensor.lounge_trv_battery")
     assert entry.unique_id == "trv-1-Battery"

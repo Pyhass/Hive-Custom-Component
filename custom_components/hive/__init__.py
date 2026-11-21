@@ -9,7 +9,7 @@ from apyhiveapi import Auth, Hive
 from apyhiveapi.helper.hive_exceptions import HiveReauthRequired
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_SCAN_INTERVAL
+from homeassistant.const import CONF_SCAN_INTERVAL, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import (
@@ -20,7 +20,7 @@ from homeassistant.helpers import (
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DOMAIN, PLATFORM_LOOKUP, PLATFORMS
+from .const import DOMAIN, PLATFORM_LOOKUP
 from .entity import HiveEntity
 from .services import async_setup_services
 
@@ -76,18 +76,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: HiveConfigEntry) -> None
     )
 
     await hass.config_entries.async_forward_entry_setups(
-        entry,
-        [
-            ha_type
-            for ha_type, hive_type in PLATFORM_LOOKUP.items()
-            if devices.get(hive_type)
-        ],
+        entry, _platforms_with_devices(devices)
     )
+
+
+def _platforms_with_devices(devices: dict[str, list[Any]]) -> list[Platform]:
+    """Return the platforms Hive reported devices for.
+
+    Only these are set up, so only these are unloaded (#208): unloading a
+    platform that was never set up for this entry logs a warning when another
+    integration has loaded it (and used to raise and abort the reload). A
+    reload sets the entry up again with a fresh device list, so device types
+    added since are still picked up.
+    """
+    return [
+        ha_type
+        for ha_type, hive_type in PLATFORM_LOOKUP.items()
+        if devices.get(hive_type)
+    ]
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: HiveConfigEntry) -> None:
     """Unload a config entry."""
-    await hass.config_entries.async_unload_platforms_or_raise(entry, PLATFORMS)
+    await hass.config_entries.async_unload_platforms_or_raise(
+        entry, _platforms_with_devices(entry.runtime_data.session.deviceList)
+    )
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: HiveConfigEntry) -> None:
