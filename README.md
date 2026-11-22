@@ -3,123 +3,120 @@
 [![CI](https://github.com/Pyhass/Hive-Custom-Component/actions/workflows/ci.yml/badge.svg)](https://github.com/Pyhass/Hive-Custom-Component/actions/workflows/ci.yml)
 [![Compatibility](https://github.com/Pyhass/Hive-Custom-Component/actions/workflows/compat.yml/badge.svg)](https://github.com/Pyhass/Hive-Custom-Component/actions/workflows/compat.yml)
 ![GitHub Release](https://img.shields.io/github/v/release/Pyhass/Hive-Custom-Component?display_name=tag&logo=Github)
+![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.11.0%2B-41BDF5?logo=homeassistant)
 
+An extended version of Home Assistant's built-in [Hive integration](https://www.home-assistant.io/integrations/hive/).
+It sets up everything the built-in integration does, adds extra sensors and
+options, and gets fixes and new versions of the Hive library sooner.
 
+> [!IMPORTANT]
+> This component **replaces** the built-in Hive integration (it uses the same
+> `hive` domain). You can't run both at once. It needs **Home Assistant 2026.11.0
+> or newer**.
 
-This is a custom version of the Home Assistant Hive
-component. This version will setup the Home Assistant
-Hive component, but will also take device attributes
-within the Hive system and set them up as individual
-sensors e.g `Living Room Lamp Battery Level`
+## What you get on top of the built-in integration
 
-* Additional Sensor types:
-  * Availability - Online/Offline
-  * Mode - Manual/Schedule
-  * Battery Level
-  * Current Temperature - Heating/Hotwater only
-  * Target Temperature - Heating/Hotwater only
-  * Current State - Heating/Hotwater only
-  * Boost State - Heating/Hotwater only
+| Feature | Details |
+| --- | --- |
+| **Boost ends** sensors | One for each heating zone and for hot water. Shows when the current boost finishes ("in 25 minutes"), and automations can trigger on it. Shows unknown when no boost is running. |
+| **Availability** sensor | Whether each device is online or offline. |
+| **Mode** sensor | The mode a device is in. |
+| Extra heating attributes | On the current temperature sensor: today's min / max, min / max since restart, and how far the room is from its target. On the heating and hot water mode sensors: the schedule's **Now**, **Next** and **Later** slots. |
+| Battery history | Battery levels record long-term statistics, so you can chart them. |
+| Scan interval option | How often Hive is polled, from 30 seconds (default 120). The built-in integration's is fixed. |
+| Earlier fixes | New versions of the Hive library ([`pyhive-integration`](https://pypi.org/project/pyhive-integration/)) usually ship here before they reach Home Assistant. |
 
-## How this relates to the built-in Hive integration
-
-This component replaces Home Assistant's built-in Hive integration. It reuses the
-built-in code wherever it can and adds the extras above on top.
-
-Think of it as an opt-in fast channel. Fixes and new versions of the Hive library
-([`pyhive-integration`](https://pypi.org/project/pyhive-integration/)) usually reach
-this component before they reach Home Assistant itself. If you want to help test the
-newest changes, turn on beta releases for this repository in HACS. Betas may use
-pre-release versions of the library. Stable releases only use stable ones.
-
-For details on what the Home Assistant Hive component supports, please see below:
-
-[**>> Hive Component Documentation <<**](https://www.home-assistant.io/integrations/hive/)
-
-Issues and trouble reports should be reported in
-the issues tab:
-
-[**>> Report issues here <<**](https://github.com/Pyhass/Hive-Custom-Component/issues)
+Everything else (heating, hot water, TRVs, lights, plugs, sensors, the boost
+actions) comes from the built-in integration unchanged, so its
+[documentation](https://www.home-assistant.io/integrations/hive/) applies here too.
 
 ## Install
 
-There are two ways to install the Hive custom component see below.
-
-### HACS
-
-The recommended way to is to install via [HACS](https://hacs.xyz/).
-Once HACS has been installed and setup. You just need to navigate to the HACS panel and choose integrations.
-This will show and option to add an integration click it and search for Hive in the presented popup.
+### HACS / new Marketplace (recommended)
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Pyhass&repository=Hive-Custom-Component)
 
-Once installation is complete please follow the [setup section](#setup) to set the Hive integration up.
+1. Click the button above, or search for **Hive** in [HACS](https://hacs.xyz/) / the new Marketplace.
+2. Click **Download**.
+3. Restart Home Assistant.
 
 ### Manually
 
-To install the Hive integration manually you need to download the [latest version](https://github.com/Pyhass/Hive-Custom-Component/releases/latest).
-Once downloaded you will need to copy the Hive folder into the custom_components folder within your home assistant configuration, if this does not exist then the folder will need creating.
+1. Download `hive.zip` from the [latest release](https://github.com/Pyhass/Hive-Custom-Component/releases/latest).
+2. Unzip it into `custom_components/hive` inside your Home Assistant configuration
+   folder. Create the folders if they don't exist.
+3. Restart Home Assistant.
 
-Once installation is complete please follow the [setup section](#setup) to set the Hive integration up.
+## Set up
 
-## Setup
+If you already use the built-in Hive integration, there's nothing to set up: see
+[Switching from the built-in integration](#switching-from-the-built-in-integration).
 
-### UI
+1. Go to [**Settings → Devices & services**](https://my.home-assistant.io/redirect/integrations/).
+2. Click **Add integration** and search for [**Hive**](https://my.home-assistant.io/redirect/config_flow_start/?domain=hive).
+3. Sign in with your Hive account. If Hive sends you a code by text message, enter it
+   to finish.
 
-The component can be setup in the Home assistant UI by doing the following actions.
+### Options
 
-* 1  - Navigate to the Home Assistant [Configuration](https://my.home-assistant.io/redirect/config/).
-* 2  - Open the [integrations](https://my.home-assistant.io/redirect/integrations/) panel.
-* 3  - Click the add integrations option.
-* 4  - Search for [Hive](https://my.home-assistant.io/redirect/config_flow_start/?domain=hive)
-* 5  - Follow onboarding instructions to setup Hive.
+Open the Hive integration and click **Configure** to change:
 
-## Options
+- **Scan interval:** how often to fetch new data from Hive, in seconds. The default is
+  120, and the minimum is 30.
 
-Once the integration is installed and configured with Home Assistant you will be able to
-change the below options from the Home Assistant integration page.
+## Switching from the built-in integration
 
-* 1 - **Scan Interval**
-This determines how often the integration should communicate with Hive to retrieve new data.
-The default configuration is 120 seconds but can be reduced to as low as 30 seconds.
+Because this component uses the same `hive` domain, it takes over your existing Hive
+integration when you install it and restart. You don't have to sign in again, and
+your devices, entities, entity IDs and automations stay as they are. The extra
+sensors above are added alongside them.
 
-## Update
+To go back to the built-in integration, remove this component in HACS / Marketplace (or delete
+`custom_components/hive`) and restart. The extra sensors become unavailable and can
+be deleted from **Settings → Entities**.
 
-Update instructions based on installation method.
+## Updating
 
-### HACS Update
+- **HACS / Marketplace:** it tells you when an update is available. Install it and restart.
+- **Manually:** download the latest `hive.zip` again, replace the contents of
+  `custom_components/hive` with it, and restart.
 
-Hacs will auto notify you within the HACS panel that there is a pending update.
+### Beta releases
 
-### Manual Update
+Betas are a testing channel for the newest changes, including pre-release versions
+of the Hive library. To get them, open this repository in HACS / Marketplace, choose **Redownload**,
+and turn on **Show beta versions**. Stable releases only ever use stable library
+versions. Please report anything a beta breaks.
 
-To update to the next version download the [latest version](https://github.com/Pyhass/Hive-Custom-Component/releases/latest) again
-and replace the current hive folder with the newly downloaded one.
+## Troubleshooting
 
+**Hive asks you to sign in again.** When your Hive login expires, Home Assistant
+shows a **Reconfigure** prompt on the Hive integration. Click it and sign in, entering
+the text message code if asked. Your devices and entities are kept, so don't delete
+the integration.
 
-:warning: **Setting up this custom version will overwrite the default integration.**
+**"Hive is already configured" when adding it.** Look under **Settings → Devices &
+services** for an ignored or disabled Hive entry. Re-enable it, or stop ignoring it,
+instead of adding a new one.
 
-## Development
+**Turn on debug logs** before reporting a problem. Either click **Enable debug
+logging** on the Hive integration page, or add this to `configuration.yaml`:
 
-Tests use Home Assistant's own [pytest-homeassistant](https://github.com/home-assistant/core/tree/dev/packages/pytest-homeassistant)
-package. Its version is the Home Assistant version they run against. Python 3.14 is required.
-
-```bash
-uv venv -p 3.14 && source .venv/bin/activate
-uv pip install -r requirements_test.txt $(jq -r '.requirements[]' custom_components/hive/manifest.json)
-
-python -m pytest                     # tests
-ruff check . && ruff format --check  # lint
-python script/gen_translations.py    # regenerate translations/en.json after editing strings.json
+```yaml
+logger:
+  logs:
+    custom_components.hive: debug
+    apyhiveapi: debug
 ```
 
-### CI
+Remove your email address, tokens and device IDs before sharing logs.
 
-| Workflow | When | What |
-| --- | --- | --- |
-| `ci.yml` | PRs and pushes to dev | HACS validation, hassfest, ruff, tests |
-| `compat.yml` | Nightly | Tests against the latest HA stable and beta, import check against HA dev |
-| `release.yml` | Release published | Checks the tag matches `manifest.json`, attaches `hive.zip` |
-| `pyhive_bump.yml` | Weekly, manual, or dispatched from Pyhive | Opens a PR bumping `pyhive-integration` |
-| `stale.yml` | Daily | Marks and closes inactive issues and PRs |
-| `delete_beta.yml` | Manual | Deletes old beta releases |
+## Reporting issues
+
+Report bugs and ask for features in [this repository's issues](https://github.com/Pyhass/Hive-Custom-Component/issues).
+Include the component version, the Home Assistant version and debug logs.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) to set up, test and open pull requests,
+and [MAINTAINING.md](MAINTAINING.md) for releases and CI.
