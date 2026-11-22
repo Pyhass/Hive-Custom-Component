@@ -60,9 +60,13 @@ Add or update a test with every behaviour change.
 
 ## Pull requests
 
-- Branch from `dev` and open the PR against `dev`, the main branch. Betas and stable
-  releases are both cut from `dev`.
+- Branch from `dev` and open the PR against `dev`, the main branch. Betas are cut
+  from `dev`. Only a fix that has to reach users before the current betas finish
+  goes to `master`, the stable line.
 - CI must pass: HACS validation, hassfest, lint and tests.
+- Claude Code reviews every non-draft PR automatically and posts a summary
+  comment. Fork PRs are reviewed once a maintainer adds the `claude-review`
+  label. Mention `@claude` in a comment to ask it a question or for a change.
 - @KJonline is asked to review automatically.
 - Don't bump `version` in `manifest.json` unless the PR is meant to be released
   (see [MAINTAINING.md](MAINTAINING.md)).

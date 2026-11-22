@@ -27,6 +27,7 @@ The full version is in [CLAUDE.md](CLAUDE.md). Everything below follows from the
 | Monday, 06:23 UTC | `pyhive_bump.yml` | Opens a PR if a newer `pyhive-integration` is on PyPI | [Dependency PRs](#dependency-prs) |
 | Weekly | Dependabot | PRs for GitHub Actions versions and for `requirements_test.txt` | [Dependency PRs](#dependency-prs) |
 | A GitHub release is published | `release.yml` | Checks the tag matches `manifest.json`, and that a stable release doesn't pin pre-release pyhive, then attaches `hive.zip` | [Releasing](#releasing) |
+| Every PR, `@claude` mentions | `claude.yml` | Claude Code reviews each non-draft PR (inline comments plus one summary), checking `apyhiveapi` calls against the pinned library and local code against core. It also replies to `@claude` in issues and PRs. Fork PRs are only reviewed after a maintainer adds the `claude-review` label. | Advisory, not a required check. Re-run it from the Actions tab |
 | Manual | `delete_beta.yml` | Deletes old pre-releases and their tags, keeping the newest | Not applicable |
 
 ## Releasing
@@ -170,6 +171,12 @@ HA version.
 - **Pyhive repo:** add a `HIVE_COMPONENT_DISPATCH_TOKEN` secret and a publish step
   that sends `repository_dispatch`. The snippet is in the header of `pyhive_bump.yml`.
   It triggers a bump PR as soon as Pyhive releases.
+- **Claude Code (`claude.yml`):**
+  - Install the [Claude GitHub App](https://github.com/apps/claude) on this repo.
+  - Add a `CLAUDE_CODE_OAUTH_TOKEN` secret (create it with `claude setup-token`).
+  - Create the `claude-review` label, used to review fork PRs:
+    `gh label create claude-review --description "Run the Claude Code review on a fork PR"`.
+  - What it checks is set in the `Reviewing pull requests` section of `CLAUDE.md`.
 - **Scheduled workflows enabled:**
   - Check with `gh workflow list --all`.
   - CI switches them back on after the next push to dev, but if the repo goes
