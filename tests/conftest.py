@@ -39,6 +39,13 @@ TOKENS = {
     }
 }
 DEVICE_DATA = ["device-group-key", "device-key", "device-password"]
+HOLIDAY_MODE_OFF = {"enabled": False, "active": False}
+# Hub-level sensors added whenever Hive reports a hub.
+HOLIDAY_SENSORS = {
+    "sensor.hive_hub_holiday_mode",
+    "sensor.hive_hub_holiday_date_start",
+    "sensor.hive_hub_holiday_date_end",
+}
 
 # pytest-homeassistant's hass fixture enables custom integrations by default, so
 # custom_components/hive loads instead of the core hive integration.
@@ -134,12 +141,16 @@ def mock_hive(
     hive = MagicMock()
     hive.session.startSession = AsyncMock(return_value=devices)
     hive.session.deviceList = devices
+    hive.session.hub_id = HUB_ID
+    hive.hub.get_holiday_mode = AsyncMock(return_value=HOLIDAY_MODE_OFF)
+    hive.hub.set_holiday_mode = AsyncMock(return_value=True)
+    hive.hub.cancel_holiday_mode = AsyncMock(return_value=True)
     hive.session.updateData = AsyncMock()
     hive.sensor.getSensor = AsyncMock(side_effect=_echo)
     hive.heating.getClimate = AsyncMock(side_effect=_echo)
     # Extra attributes on the heating sensors (min/max, boost end); no data by default.
     hive.heating.minmaxTemperature = AsyncMock(return_value=None)
-    hive.heating.getTargetTemperature = AsyncMock(return_value=None)
+    hive.heating.get_target_temperature = AsyncMock(return_value=None)
     hive.heating.getBoostStatus = AsyncMock(return_value="OFF")
     hive.heating.getBoostTime = AsyncMock(return_value=None)
     hive.hotwater.getBoost = AsyncMock(return_value="OFF")

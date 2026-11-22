@@ -45,3 +45,24 @@ boost_hot_water:
           options:
             - "on"
             - "off"
+set_holiday_mode:
+  fields:
+    start:
+      required: true
+      selector:
+        datetime:
+    end:
+      required: true
+      selector:
+        datetime:
+    temperature:
+      required: true
+      default: 15.0
+      selector:
+        number:
+          min: 7
+          max: 35
+          step: 0.5
+          unit_of_measurement: °
+cancel_holiday_mode:
+  fields: {}
