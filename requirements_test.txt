@@ -5,5 +5,5 @@
 # tests/conftest.py stops the run.
 # Bumped by Dependabot; the nightly compat workflow also tests the latest stable and beta.
 
-ruff==0.17.4
+ruff==0.17.5
 pytest-homeassistant==2026.11.2
