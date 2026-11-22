@@ -101,8 +101,8 @@ and replace the current hive folder with the newly downloaded one.
 
 ## Development
 
-Tests use [pytest-homeassistant-custom-component](https://github.com/MatthewFlamm/pytest-homeassistant-custom-component),
-which pins the Home Assistant version they run against. Python 3.14 is required.
+Tests use Home Assistant's own [pytest-homeassistant](https://github.com/home-assistant/core/tree/dev/packages/pytest-homeassistant)
+package. Its version is the Home Assistant version they run against. Python 3.14 is required.
 
 ```bash
 uv venv -p 3.14 && source .venv/bin/activate

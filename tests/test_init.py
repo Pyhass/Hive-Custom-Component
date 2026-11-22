@@ -4,23 +4,24 @@ from unittest.mock import MagicMock
 
 from aiohttp.web_exceptions import HTTPServiceUnavailable
 from apyhiveapi.helper.hive_exceptions import (
-    HiveConnectionError,
+    HiveInvalidDeviceAuthentication,
     HiveReauthRequired,
-    HiveUnknownConfiguration,
 )
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from homeassistant.config_entries import SOURCE_REAUTH, ConfigEntryState
 from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.setup import async_setup_component
 
 from custom_components.hive import async_remove_config_entry_device, refresh_system
 from custom_components.hive.const import DOMAIN
 
 from .conftest import HUB_ID
+from .test_light import WARM_WHITE
 
 
 async def test_setup_and_unload(
@@ -48,10 +49,11 @@ async def test_setup_and_unload(
 @pytest.mark.parametrize(
     ("exception", "state", "reauth"),
     [
+        # pyhive-integration 2.0 adds HiveConnectionError (retry) and
+        # HiveUnknownConfiguration (reauth). Add them back with that bump.
         (HTTPServiceUnavailable(), ConfigEntryState.SETUP_RETRY, False),
-        (HiveConnectionError(), ConfigEntryState.SETUP_RETRY, False),
         (HiveReauthRequired(), ConfigEntryState.SETUP_ERROR, True),
-        (HiveUnknownConfiguration(), ConfigEntryState.SETUP_ERROR, True),
+        (HiveInvalidDeviceAuthentication(), ConfigEntryState.SETUP_ERROR, True),
     ],
 )
 async def test_setup_failures(
@@ -105,6 +107,44 @@ async def test_only_platforms_with_devices_are_set_up(hass: HomeAssistant) -> No
     assert "hive.sensor" in hass.config.components
     for platform in ("binary_sensor", "climate", "light", "switch", "water_heater"):
         assert f"hive.{platform}" not in hass.config.components
+
+
+async def test_reload_skips_platforms_never_set_up(
+    hass: HomeAssistant,
+    setup_integration: MockConfigEntry,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Reload only unloads the platforms that were set up (#208).
+
+    Hive has no lights here, but another integration loaded the light component.
+    Before HA 2026.11, unloading the light platform for this entry raised and
+    aborted the reload; HA now logs a warning instead. Neither should happen.
+    """
+    assert await async_setup_component(hass, "light", {})
+    await hass.async_block_till_done()
+
+    assert await hass.config_entries.async_reload(setup_integration.entry_id)
+    await hass.async_block_till_done()
+
+    assert setup_integration.state is ConfigEntryState.LOADED
+    assert "Ignored unload request" not in caplog.text
+
+
+async def test_reload_picks_up_new_device_types(
+    hass: HomeAssistant, mock_hive: MagicMock, setup_integration: MockConfigEntry
+) -> None:
+    """A device type added since setup (e.g. a new light) appears after a reload."""
+    assert "hive.light" not in hass.config.components
+    devices = {**mock_hive.session.deviceList, "light": [WARM_WHITE]}
+    mock_hive.session.startSession.return_value = devices
+    mock_hive.session.deviceList = devices
+
+    assert await hass.config_entries.async_reload(setup_integration.entry_id)
+    await hass.async_block_till_done()
+
+    assert setup_integration.state is ConfigEntryState.LOADED
+    assert "hive.light" in hass.config.components
+    assert hass.states.get("light.kitchen") is not None
 
 
 async def test_remove_entry_forgets_device(

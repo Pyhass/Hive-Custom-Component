@@ -1,16 +1,32 @@
 """Fixtures for Hive custom component tests."""
 
 from collections.abc import Generator
+import json
+from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from awesomeversion import AwesomeVersion
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
 
-from custom_components.hive.const import DOMAIN
+# Only Home Assistant versions at or above the hacs.json minimum are supported.
+# Refuse to test anything older, rather than fail with confusing import errors.
+MIN_HA_VERSION = json.loads(
+    (Path(__file__).parents[1] / "hacs.json").read_text(encoding="utf-8")
+)["homeassistant"]
+if AwesomeVersion(HA_VERSION) < AwesomeVersion(MIN_HA_VERSION):
+    pytest.exit(
+        f"Home Assistant {HA_VERSION} is older than the minimum this component "
+        f"supports ({MIN_HA_VERSION}, from hacs.json). Test against a newer "
+        "Home Assistant: bump pytest-homeassistant in requirements_test.txt.",
+        returncode=1,
+    )
+
+from custom_components.hive.const import DOMAIN  # noqa: E402
 
 USERNAME = "user@example.com"
 PASSWORD = "test-password"
@@ -24,10 +40,8 @@ TOKENS = {
 }
 DEVICE_DATA = ["device-group-key", "device-key", "device-password"]
 
-
-@pytest.fixture(autouse=True)
-def auto_enable_custom_integrations(enable_custom_integrations: None) -> None:
-    """Load custom_components/hive instead of the core hive integration."""
+# pytest-homeassistant's hass fixture enables custom integrations by default, so
+# custom_components/hive loads instead of the core hive integration.
 
 
 def make_device(
@@ -123,6 +137,13 @@ def mock_hive(
     hive.session.updateData = AsyncMock()
     hive.sensor.getSensor = AsyncMock(side_effect=_echo)
     hive.heating.getClimate = AsyncMock(side_effect=_echo)
+    # Extra attributes on the heating sensors (min/max, boost end); no data by default.
+    hive.heating.minmaxTemperature = AsyncMock(return_value=None)
+    hive.heating.getTargetTemperature = AsyncMock(return_value=None)
+    hive.heating.getBoostStatus = AsyncMock(return_value="OFF")
+    hive.heating.getBoostTime = AsyncMock(return_value=None)
+    hive.hotwater.getBoost = AsyncMock(return_value="OFF")
+    hive.hotwater.getBoostTime = AsyncMock(return_value=None)
     hive.hotwater.getWaterHeater = AsyncMock(side_effect=_echo)
     hive.light.getLight = AsyncMock(side_effect=_echo)
     hive.switch.getSwitch = AsyncMock(side_effect=_echo)

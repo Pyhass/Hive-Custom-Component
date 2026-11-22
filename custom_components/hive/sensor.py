@@ -2,8 +2,10 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
+
+from apyhiveapi import Hive
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -20,14 +22,13 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
+from homeassistant.util import dt as dt_util
 
 from . import HiveConfigEntry
 from .entity import HiveEntity
-from apyhiveapi import Hive
 
 PARALLEL_UPDATES = 0
 SCAN_INTERVAL = timedelta(seconds=15)
-
 
 
 @dataclass(frozen=True)
@@ -41,6 +42,7 @@ SENSOR_TYPES: tuple[HiveSensorEntityDescription, ...] = (
     HiveSensorEntityDescription(
         key="Battery",
         native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
         device_class=SensorDeviceClass.BATTERY,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
@@ -92,6 +94,10 @@ SENSOR_TYPES: tuple[HiveSensorEntityDescription, ...] = (
     HiveSensorEntityDescription(key="Availability", icon="mdi:check-circle"),
 )
 
+# Core's binary_sensor already shows whether boost is on for these. We add a
+# timestamp sensor for when the boost ends, which automations can trigger on.
+BOOST_TYPES = ("Heating_Boost", "Hotwater_Boost")
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -103,15 +109,18 @@ async def async_setup_entry(
     devices = hive.session.deviceList.get("sensor")
     if not devices:
         return
-    async_add_entities(
-        (
-            HiveSensorEntity(hass, entry, hive, dev, description)
-            for dev in devices
-            for description in SENSOR_TYPES
-            if dev["hiveType"] == description.key
-        ),
-        True,
+    entities: list[SensorEntity] = [
+        HiveSensorEntity(hass, entry, hive, dev, description)
+        for dev in devices
+        for description in SENSOR_TYPES
+        if dev["hiveType"] == description.key
+    ]
+    entities.extend(
+        HiveBoostEndSensorEntity(hass, entry, hive, dev)
+        for dev in devices
+        if dev["hiveType"] in BOOST_TYPES
     )
+    async_add_entities(entities, True)
 
 
 class HiveSensorEntity(HiveEntity, SensorEntity):
@@ -131,29 +140,17 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
         super().__init__(hass, entry, hive, hive_device)
         self.entity_description = entity_description
 
-    async def async_update(self):
+    async def async_update(self) -> None:
         """Update all Node data from Hive."""
         await self.hive.session.updateData(self.device)
         self.device = await self.hive.sensor.getSensor(self.device)
 
-        if self.device["hiveType"] == "CurrentTemperature":
+        if self.device["hiveType"] == "Heating_Current_Temperature":
             self._attr_extra_state_attributes = await self.get_current_temp_sa()
-        elif self.device["hiveType"] in ("Heating_State", "Heating_Mode"):
+        elif self.device["hiveType"] == "Heating_Mode":
             self._attr_extra_state_attributes = await self.get_heating_state_sa()
-        elif self.device["hiveType"] == "Heating_Boost":
-            s_a = {}
-            if await self.hive.heating.getBoostStatus(self.device) == "ON":
-                minsend = await self.hive.heating.getBoostTime(self.device)
-                s_a.update({"Boost ends in": (str(minsend) + " minutes")})
-            self._attr_extra_state_attributes = s_a
-        elif self.device["hiveType"] in ("Hotwater_State", "Hotwater_Mode"):
+        elif self.device["hiveType"] == "Hotwater_Mode":
             self._attr_extra_state_attributes = await self.get_hotwater_state_sa()
-        elif self.device["hiveType"] == "Hotwater_Boost":
-            s_a = {}
-            if await self.hive.hotwater.getBoost(self.device) == "ON":
-                endsin = await self.hive.hotwater.getBoostTime(self.device)
-                s_a.update({"Boost ends in": (str(endsin) + " minutes")})
-            self._attr_extra_state_attributes = s_a
 
         if self.device["hiveType"] not in ("sense", "Availability"):
             self._attr_available = self.device.get("deviceData", {}).get("online", True)
@@ -167,9 +164,6 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
     async def get_current_temp_sa(self):
         """Get current heating temperature state attributes."""
         s_a = {}
-        temp_current = 0
-        temperature_target = 0
-        temperature_difference = 0
 
         minmax_temps = await self.hive.heating.minmaxTemperature(self.device)
         if minmax_temps is not None:
@@ -193,10 +187,15 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
                 }
             )
 
-        temp_current = await self.hive.heating.currentTemperature(self.device)
-        temperature_target = await self.hive.heating.targetTemperature(self.device)
+        # This sensor's own state is the current temperature (getSensor reads it).
+        temp_current = self.device.get("status", {}).get("state")
+        temperature_target = await self.hive.heating.getTargetTemperature(self.device)
 
-        if temperature_target > temp_current:
+        if (
+            isinstance(temp_current, (int, float))
+            and isinstance(temperature_target, (int, float))
+            and temperature_target > temp_current
+        ):
             temperature_difference = temperature_target - temp_current
             temperature_difference = round(temperature_difference, 2)
 
@@ -314,3 +313,60 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
             s_a.update({"Schedule not active": ""})
 
         return s_a
+
+
+class HiveBoostEndSensorEntity(HiveEntity, SensorEntity):
+    """When a heating or hot water boost ends (unknown when no boost is on)."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:timer-outline"
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: HiveConfigEntry,
+        hive: Hive,
+        hive_device: dict[str, Any],
+    ) -> None:
+        """Initialise the boost end sensor."""
+        super().__init__(hass, entry, hive, hive_device)
+        # Core's Boost binary sensor uses "<hiveID>-<hiveType>" already.
+        self._attr_unique_id = f"{self._attr_unique_id}-end"
+        self._attr_name = f"{self.device['haName']} ends".strip()
+
+    async def async_update(self) -> None:
+        """Update the boost end time from Hive."""
+        await self.hive.session.updateData(self.device)
+        self.device = await self.hive.sensor.getSensor(self.device)
+        self._attr_available = self.device.get("deviceData", {}).get("online", True)
+
+        if self.device["hiveType"] == "Heating_Boost":
+            boost_on = await self.hive.heating.getBoostStatus(self.device) == "ON"
+            minutes = await self.hive.heating.getBoostTime(self.device)
+        else:
+            boost_on = await self.hive.hotwater.getBoost(self.device) == "ON"
+            minutes = await self.hive.hotwater.getBoostTime(self.device)
+
+        self._attr_native_value = self._boost_end(boost_on, minutes)
+
+    def _boost_end(self, boost_on: bool, minutes: Any) -> datetime | None:
+        """Work out when the boost ends, keeping the time steady between polls."""
+        try:
+            remaining = int(minutes)
+        except TypeError, ValueError:
+            remaining = None
+        if not boost_on or remaining is None or remaining < 0:
+            return None
+
+        end = (dt_util.utcnow() + timedelta(minutes=remaining)).replace(
+            second=0, microsecond=0
+        )
+        # Hive reports whole minutes, so each poll's estimate wobbles by up to a
+        # minute. Keep the previous time unless it moved more than that, so the
+        # state (and automations using it) only change when the boost does.
+        previous = self._attr_native_value
+        if isinstance(previous, datetime) and abs(end - previous) <= timedelta(
+            minutes=1
+        ):
+            return previous
+        return end
