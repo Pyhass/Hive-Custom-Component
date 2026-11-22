@@ -40,6 +40,32 @@ still, as a testing channel.
 - Never let the fast channel break people. Stable releases need green CI and a
   green Compatibility run.
 
+## Related repos
+
+Every change to this repo has to be weighed against two other repos:
+
+- **Home Assistant core** (`home-assistant/core`, forked as `Pyhass/core`), and
+  its `homeassistant/components/hive` integration.
+- **`pyhive-integration`** (`Pyhass/Pyhiveapi` on GitHub, imported as
+  `apyhiveapi`), the library pinned in `manifest.json`.
+
+**This repo's Hive code mostly just imports core.** The platform modules
+(`binary_sensor.py`, `climate.py`, `light.py`, `switch.py`, `water_heater.py`,
+`entity.py`) re-export core's hive integration as they are. Local code exists only
+where we have to differ from core, mainly `sensor.py`, plus the setup glue in
+`__init__.py`, `config_flow.py` and `const.py`. So before changing something, check
+what core does now, and don't copy core code into this repo to change it. When you
+change the local code, compare it with core's version so it doesn't drift further
+than it has to, and check that every `apyhiveapi` call matches the library
+version we pin.
+
+Both repos are usually cloned somewhere on the maintainer's computer. Look for the
+local clones first, for example by searching nearby directories for a git repo
+whose remote matches one of the names above, and don't assume a path. Core's clone
+may be a fork, so check its `upstream` remote as well as `origin`. If you can't
+find one, ask the user before cloning it, or fall back to GitHub (`gh`). When a
+change here should also go upstream (principle 1), say which repo it belongs in.
+
 ## What this means for CI
 
 hassfest compares a custom integration's requirements with every core

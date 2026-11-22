@@ -3,7 +3,7 @@
 from typing import Any
 
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
@@ -74,7 +74,8 @@ async def test_heating_and_hot_water_state_sensors(
     """Heating and hot water state/boost come from the sensor list as binary sensors.
 
     They have no description in this component's sensor platform, so they don't
-    also show up as sensors.
+    also show up as sensors. The only sensors are the "Boost ends" timestamps
+    this component adds next to the Boost binary sensors.
     """
     assert hass.states.get("binary_sensor.thermostat_heating_state").state == STATE_ON
     assert hass.states.get("binary_sensor.thermostat_heating_boost").state == STATE_OFF
@@ -82,4 +83,7 @@ async def test_heating_and_hot_water_state_sensors(
         hass.states.get("binary_sensor.hot_water_hotwater_boost").state
         == STATE_UNAVAILABLE
     )
-    assert hass.states.async_entity_ids("sensor") == []
+    assert sorted(hass.states.async_entity_ids("sensor")) == [
+        "sensor.hot_water_hotwater_boost_ends",
+        "sensor.thermostat_heating_boost_ends",
+    ]

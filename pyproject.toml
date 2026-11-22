@@ -19,7 +19,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 # These platforms re-export Home Assistant core's hive platforms on purpose.
-"custom_components/hive/{binary_sensor,climate,entity,light,switch,water_heater}.py" = ["F403"]
+"custom_components/hive/{binary_sensor,climate,entity,light,services,switch,water_heater}.py" = ["F403"]
 
 [tool.ruff.lint.isort]
 force-sort-within-sections = true
@@ -36,3 +36,7 @@ homeassistant = ["homeassistant"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+# Let Home Assistant install its httpx alias before respx is imported
+# (pytest-homeassistant README). Its HTTP mocks still use respx directly.
+addopts = "-p no:respx"
+pythonpath = ["."]
