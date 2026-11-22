@@ -65,6 +65,7 @@ env:
     WebFetch(domain:pypi.org),
     WebFetch(domain:www.home-assistant.io),
     WebFetch(domain:developers.home-assistant.io),
+    WebFetch(domain:contributors.home-assistant.io),
     WebFetch(domain:hacs.xyz)
 
   # Tools Claude may never use, in both jobs. Sub-agents are blocked because
@@ -150,14 +151,25 @@ env:
        - a `pyhive-integration` pin that isn't exact (`==`);
        - a pre-release pin on a stable release;
        - a `manifest.json` version bump that doesn't match the release plan.
-    3. Security: credentials, tokens or PII in code or logs (log payloads
+    3. Home Assistant best practices. This is a custom component, but it
+       inherits Home Assistant's integration standards. Check changed local
+       code against the "Home Assistant best practices" section of
+       `CLAUDE.md`, and fetch the quality scale rule page
+       (`https://contributors.home-assistant.io/core/quality-scale/<rule>/`)
+       for any rule the change touches. Name
+       the rule (for example `runtime-data`, `has-entity-name`,
+       `entity-translations`, `config-entry-unloading`, `action-setup`) and
+       link its page. Only flag code this PR adds or changes. A gap in code
+       re-exported from core belongs upstream, so mention it as an upstream
+       note, not a change to make here.
+    4. Security: credentials, tokens or PII in code or logs (log payloads
        through `_sanitize_payload` in `config_flow.py`), and anything that
        weakens the config flow's 2FA or device registration.
-    4. Tests: new behaviour and bug fixes need tests in `tests/`, one file
+    5. Tests: new behaviour and bug fixes need tests in `tests/`, one file
        per platform, using the fixtures in `tests/conftest.py`. `strings.json`
        changes need `translations/en.json` regenerated; a test checks they
        match.
-    5. User impact: new, renamed or removed entities, attributes or services
+    6. User impact: new, renamed or removed entities, attributes or services
        should be called out in the PR description.
 
     Skip pure style nits: ruff and hassfest already run in CI. A hassfest
@@ -178,8 +190,9 @@ env:
       - a one-line verdict;
       - bugs found, listed first;
       - other findings by severity (blocking / should fix / minor);
-      - a "Checked against" line naming the `pyhive-integration` version and
-        the core hive files (with ref) you compared against;
+      - a "Checked against" line naming the `pyhive-integration` version, the
+        core hive files (with ref) and the Home Assistant developer docs or
+        quality scale rules you compared against;
       - a note on anything you didn't review.
     - Label everything you post so readers know it came from this automated
       review (it may be posted as github-actions[bot]):

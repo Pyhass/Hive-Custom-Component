@@ -89,16 +89,69 @@ GitHub instead.
   (services) must be registered by our `__init__.py`.
 - **Check Home Assistant versions.** Code must work on the minimum in
   `hacs.json` and on the version the tests pin (`pytest-homeassistant` in
-  `requirements_test.txt`). Use developers.home-assistant.io and the core source
+  `requirements_test.txt`). Use contributors.home-assistant.io and the core source
   for API changes.
 - **Know which line the PR is on.** A PR into `master` must keep a stable
   pyhive pin. A PR into `dev` may pin a pyhive beta. For a merge of `master`
   into `dev`, review the conflict resolutions and every call that differs
   between the two pyhive versions.
+- **Check Home Assistant best practices** for local code (see
+  [Home Assistant best practices](#home-assistant-best-practices)).
 - **Protect users' setups.** Changed unique IDs or entity IDs orphan entities
   and break automations. Auth failures must raise `ConfigEntryAuthFailed`, so
   users can reauthenticate without deleting the integration. New, renamed or
   removed entities, attributes and services belong in the PR description.
+
+## Home Assistant best practices
+
+This is a custom component, but it inherits Home Assistant's integration
+standards. Local code should meet them the way a core integration would. Apply
+them when writing code and in every review. The rules are the
+[integration quality scale](https://contributors.home-assistant.io/core/quality-scale/rules/)
+(one page per rule at `https://contributors.home-assistant.io/core/quality-scale/<rule>/`)
+and the [developer docs](https://contributors.home-assistant.io/core/). They moved
+from developers.home-assistant.io, which now redirects there.
+Fetch the page for a rule rather than relying on memory: they change.
+
+The ones that come up most in this repo's local code:
+
+- **Config entries:**
+  - keep the Hive client in `entry.runtime_data`, not `hass.data` (`runtime-data`);
+  - raise `ConfigEntryNotReady` or `ConfigEntryAuthFailed` from setup
+    (`test-before-setup`, `reauthentication-flow`);
+  - unload everything that was set up (`config-entry-unloading`).
+- **Services** are registered in `async_setup`, not per entry (`action-setup`),
+  and raise `ServiceValidationError` or `HomeAssistantError` with a translation
+  key (`action-exceptions`, `exception-translations`).
+- **Entities:**
+  - `_attr_has_entity_name = True` and a `translation_key` instead of hard-coded
+    names (`has-entity-name`, `entity-translations`);
+  - a stable `unique_id` (`entity-unique-id`);
+  - the correct `device_class`, `state_class` and `entity_category`
+    (`entity-device-class`, `entity-category`);
+  - noisy or rarely used entities disabled by default
+    (`entity-disabled-by-default`);
+  - `available` set from the device's online state (`entity-unavailable`), and
+    a single log line when a device goes unavailable and comes back
+    (`log-when-unavailable`);
+  - `PARALLEL_UPDATES` set in each platform (`parallel-updates`).
+- **Devices:** entities are attached to a device with `DeviceInfo` (`devices`).
+  Removed devices can be cleaned up (`stale-devices`).
+- **Async and I/O:**
+  - no blocking calls in the event loop;
+  - use the shared session from `aiohttp_client.async_get_clientsession`
+    (`inject-websession`, `async-dependency`);
+  - sensible polling intervals (`appropriate-polling`).
+- **Config flow:**
+  - all text in `strings.json`;
+  - one entry per account (`unique-config-entry`);
+  - the connection tested before the entry is created (`test-before-configure`).
+- **Typing:** full type hints on new code (`strict-typing`).
+
+Principle 1 still comes first. Don't replace a re-export with a local copy just to
+meet a rule. A gap in core's code is fixed upstream in `home-assistant/core`. Rules
+that only apply to core (brands, core documentation, the quality scale declaration
+itself) don't apply here.
 
 ## What this means for CI
 
