@@ -1,36 +1,49 @@
 """Support for the Hive devices and services."""
 
-from __future__ import annotations
-
 from collections.abc import Awaitable, Callable, Coroutine
 from functools import wraps
-import logging
 from typing import Any, Concatenate
 
 from aiohttp.web_exceptions import HTTPException
 from apyhiveapi import Auth, Hive
 from apyhiveapi.helper.hive_exceptions import (
     HiveConnectionError,
+    HiveInvalidDeviceAuthentication,
     HiveReauthRequired,
     HiveUnknownConfiguration,
 )
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_SCAN_INTERVAL
+from homeassistant.const import CONF_SCAN_INTERVAL, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers import aiohttp_client, device_registry as dr
+from homeassistant.helpers import (
+    aiohttp_client,
+    config_validation as cv,
+    device_registry as dr,
+)
 from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.typing import ConfigType
 
-from .const import DOMAIN, PLATFORM_LOOKUP, PLATFORMS
+from .const import DOMAIN, PLATFORM_LOOKUP
 from .entity import HiveEntity
-
-_LOGGER = logging.getLogger(__name__)
+from .services import async_setup_services
 
 type HiveConfigEntry = ConfigEntry[Hive]
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: HiveConfigEntry) -> bool:
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Set up the Hive integration."""
+    # This component replaces the hive domain, so core's async_setup never runs.
+    # Register core's services (the boost_* entity services) here instead.
+    async_setup_services(hass)
+    return True
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: HiveConfigEntry) -> None:
     """Set up Hive from a config entry."""
     web_session = aiohttp_client.async_get_clientsession(hass)
     hive_config = dict(entry.data)
@@ -45,39 +58,65 @@ async def async_setup_entry(hass: HomeAssistant, entry: HiveConfigEntry) -> bool
     try:
         devices = await hive.session.startSession(hive_config)
     except HTTPException as error:
-        _LOGGER.error("Could not connect to the internet: %s", error)
-        raise ConfigEntryNotReady from error
+        raise ConfigEntryNotReady(
+            f"Could not connect to the internet: {error}"
+        ) from error
     except HiveConnectionError as error:
-        _LOGGER.error("Could not fetch devices from Hive: %s", error)
-        raise ConfigEntryNotReady from error
-    except (HiveReauthRequired, HiveUnknownConfiguration) as err:
+        raise ConfigEntryNotReady(
+            f"Could not fetch devices from Hive: {error}"
+        ) from error
+    except (
+        HiveReauthRequired,
+        HiveInvalidDeviceAuthentication,
+        HiveUnknownConfiguration,
+    ) as err:
+        # HiveInvalidDeviceAuthentication: the refresh token expired and this
+        # device isn't registered for device login, so the user must sign in
+        # again with 2FA. Without this, the reauth flow is never offered (#224).
         raise ConfigEntryAuthFailed from err
+
+    hub_data = devices["parent"][0]
+    connections: set[tuple[str, str]] = set()
+    if mac := hub_data.get("macAddress"):
+        connections.add((dr.CONNECTION_NETWORK_MAC, mac))
 
     device_registry = dr.async_get(hass)
     device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
-        identifiers={(DOMAIN, devices["parent"][0]["device_id"])},
-        name=devices["parent"][0]["hiveName"],
-        model=devices["parent"][0]["deviceData"]["model"],
-        sw_version=devices["parent"][0]["deviceData"]["version"],
-        manufacturer=devices["parent"][0]["deviceData"]["manufacturer"],
+        identifiers={(DOMAIN, hub_data["device_id"])},
+        connections=connections,
+        name=hub_data["hiveName"],
+        model=hub_data["deviceData"]["model"],
+        sw_version=hub_data["deviceData"]["version"],
+        manufacturer=hub_data["deviceData"]["manufacturer"],
     )
 
     await hass.config_entries.async_forward_entry_setups(
-        entry,
-        [
-            ha_type
-            for ha_type, hive_type in PLATFORM_LOOKUP.items()
-            if devices.get(hive_type)
-        ],
+        entry, _platforms_with_devices(devices)
     )
 
-    return True
+
+def _platforms_with_devices(devices: dict[str, list[Any]]) -> list[Platform]:
+    """Return the platforms Hive reported devices for.
+
+    Only these are set up, so only these are unloaded (#208): unloading a
+    platform that was never set up for this entry logs a warning when another
+    integration has loaded it (and used to raise and abort the reload). A
+    reload sets the entry up again with a fresh device list, so device types
+    added since are still picked up.
+    """
+    return [
+        ha_type
+        for ha_type, hive_type in PLATFORM_LOOKUP.items()
+        if devices.get(hive_type)
+    ]
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: HiveConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: HiveConfigEntry) -> None:
     """Unload a config entry."""
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    await hass.config_entries.async_unload_platforms_or_raise(
+        entry, _platforms_with_devices(entry.runtime_data.session.deviceList)
+    )
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: HiveConfigEntry) -> None:
@@ -90,7 +129,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: HiveConfigEntry) -> Non
 
 
 async def async_remove_config_entry_device(
-    hass: HomeAssistant, config_entry: HiveConfigEntry, device_entry: dr.DeviceEntry
+    hass: HomeAssistant, config_entry: HiveConfigEntry, device_entry: dr.AnyDeviceEntry
 ) -> bool:
     """Remove a config entry from a device."""
     return True

@@ -10,8 +10,8 @@ updates:
         patterns: ["*"]
     labels: [dependencies]
 
-  # requirements_test.txt: the HA test plugin (which pins the HA version CI
-  # tests against) and ruff. pyhive-integration is handled by pyhive_bump.yml.
+  # requirements_test.txt: pytest-homeassistant (its version is the HA version
+  # CI tests against) and ruff. pyhive-integration is handled by pyhive_bump.yml.
   - package-ecosystem: pip
     directory: /
     schedule:

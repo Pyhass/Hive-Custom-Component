@@ -1,8 +1,11 @@
-"""Find the newest Home Assistant release in a channel and its test plugin build.
+"""Find the newest Home Assistant release in a channel and check its test package.
+
+pytest-homeassistant is versioned with Home Assistant (pytest-homeassistant==X
+pins homeassistant==X), so the test package to install has the same version.
 
 Prints GitHub Actions outputs:
     homeassistant=<version>
-    test_plugin=<pytest-homeassistant-custom-component version pinned to it>
+    test_package=<pytest-homeassistant version to install>
     skip=true|false
 
     python resolve_ha_release.py stable|beta
@@ -15,9 +18,7 @@ from urllib.request import urlopen
 from packaging.version import Version
 
 PYPI = "https://pypi.org/pypi/{}/json"
-TEST_PLUGIN = "pytest-homeassistant-custom-component"
-# How many recent test plugin releases to search for a matching HA pin.
-SEARCH_DEPTH = 40
+TEST_PACKAGE = "pytest-homeassistant"
 
 
 def _get(url: str) -> dict:
@@ -25,33 +26,20 @@ def _get(url: str) -> dict:
         return json.load(response)
 
 
-def _newest(releases: dict[str, list], *, prerelease: bool) -> Version | None:
-    versions = [
+def _published(releases: dict[str, list]) -> set[Version]:
+    return {
         Version(v)
         for v, files in releases.items()
         if files and not all(f.get("yanked") for f in files)
-    ]
-    matching = [v for v in versions if v.is_prerelease == prerelease]
-    return max(matching, default=None)
+    }
 
 
-def _test_plugin_for(ha_version: Version) -> str | None:
-    releases = _get(PYPI.format(TEST_PLUGIN))["releases"]
-    recent = sorted(
-        (v for v, files in releases.items() if files),
-        key=lambda v: max(f["upload_time"] for f in releases[v]),
-        reverse=True,
-    )[:SEARCH_DEPTH]
-    pin = f"homeassistant=={ha_version}"
-    for version in recent:
-        info = _get(PYPI.format(f"{TEST_PLUGIN}/{version}"))["info"]
-        if pin in (info["requires_dist"] or []):
-            return version
-    return None
+def _newest(versions: set[Version], *, prerelease: bool) -> Version | None:
+    return max((v for v in versions if v.is_prerelease == prerelease), default=None)
 
 
 def main(channel: str) -> None:
-    releases = _get(PYPI.format("homeassistant"))["releases"]
+    releases = _published(_get(PYPI.format("homeassistant"))["releases"])
     stable = _newest(releases, prerelease=False)
     if channel == "stable":
         target = stable
@@ -69,13 +57,12 @@ def main(channel: str) -> None:
         print("skip=true")
         return
 
-    plugin = _test_plugin_for(target)
-    if plugin is None:
-        # Fail loudly: the plugin normally ships within a day of an HA release.
-        sys.exit(f"No {TEST_PLUGIN} release pins homeassistant=={target} yet")
+    if target not in _published(_get(PYPI.format(TEST_PACKAGE))["releases"]):
+        # Fail loudly: Home Assistant publishes both together, so this is rare.
+        sys.exit(f"No {TEST_PACKAGE}=={target} on PyPI yet")
 
     print(f"homeassistant={target}")
-    print(f"test_plugin={plugin}")
+    print(f"test_package={target}")
     print("skip=false")
 
 
