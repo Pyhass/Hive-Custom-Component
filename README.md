@@ -54,8 +54,15 @@ If you already use the built-in Hive integration, there's nothing to set up: see
 
 1. Go to [**Settings → Devices & services**](https://my.home-assistant.io/redirect/integrations/).
 2. Click **Add integration** and search for [**Hive**](https://my.home-assistant.io/redirect/config_flow_start/?domain=hive).
-3. Sign in with your Hive account. If Hive sends you a code by text message, enter it
-   to finish.
+3. Sign in with your Hive account. If Hive sends you a code by text message, enter it.
+4. Enter a **device name** (default "Home Assistant"). This registers Home Assistant
+   as a trusted device on your Hive account, so it can stay signed in without asking
+   for a new code.
+
+> [!TIP]
+> Use a device name that isn't already registered on your Hive account. If you set
+> the integration up again, first remove the old Home Assistant device from the Hive
+> app (see [Home Assistant loses its device registration](#home-assistant-loses-its-device-registration)).
 
 ### Options
 
@@ -90,16 +97,33 @@ versions. Please report anything a beta breaks.
 
 ## Troubleshooting
 
-**Hive asks you to sign in again.** When your Hive login expires, Home Assistant
-shows a **Reconfigure** prompt on the Hive integration. Click it and sign in, entering
+### Hive asks you to sign in again
+
+When your Hive login expires, Home Assistant shows a **Reconfigure** prompt on the Hive integration. Click it and sign in, entering
 the text message code if asked. Your devices and entities are kept, so don't delete
 the integration.
 
-**"Hive is already configured" when adding it.** Look under **Settings → Devices &
+### "Hive is already configured" when adding it
+
+Look under **Settings → Devices &
 services** for an ignored or disabled Hive entry. Re-enable it, or stop ignoring it,
 instead of adding a new one.
 
-**Turn on debug logs** before reporting a problem. Either click **Enable debug
+### Home Assistant loses its device registration
+
+If the integration keeps asking you to sign in, or reauth fails even with the right
+code, Home Assistant may have lost its link to the device it registered on your Hive
+account. Setting it up again with the same device name doesn't fix this while the old
+registration is still there. To fix it:
+
+1. In the Hive app, go to **Account settings → Security** and delete the device
+   Home Assistant registered (the device name you entered during setup).
+2. In Home Assistant, delete the Hive integration and add it again, following
+   [Set up](#set-up).
+
+### Turn on debug logs
+
+Turn them on before reporting a problem. Either click **Enable debug
 logging** on the Hive integration page, or add this to `configuration.yaml`:
 
 ```yaml
