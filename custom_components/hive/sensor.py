@@ -1,11 +1,14 @@
 """Support for the Hive sensors."""
 
+from abc import abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
+import logging
 from typing import Any
 
 from apyhiveapi import Hive
+from apyhiveapi.helper.hive_exceptions import HiveReauthRequired
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -19,13 +22,22 @@ from homeassistant.const import (
     UnitOfPower,
     UnitOfTemperature,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.typing import StateType
 from homeassistant.util import dt as dt_util
 
 from . import HiveConfigEntry
+from .const import DOMAIN
 from .entity import HiveEntity
+from .holiday import HIVE_HOLIDAY_ERRORS, HiveHolidayModeData, async_get_holiday_data
+
+_LOGGER = logging.getLogger(__name__)
+
+HOLIDAY_MODE_SCAN_INTERVAL = timedelta(minutes=30)
 
 PARALLEL_UPDATES = 0
 SCAN_INTERVAL = timedelta(seconds=15)
@@ -107,20 +119,31 @@ async def async_setup_entry(
     """Set up Hive thermostat based on a config entry."""
     hive = entry.runtime_data
     devices = hive.session.deviceList.get("sensor")
-    if not devices:
-        return
     entities: list[SensorEntity] = [
         HiveSensorEntity(hass, entry, hive, dev, description)
-        for dev in devices
+        for dev in devices or []
         for description in SENSOR_TYPES
         if dev["hiveType"] == description.key
     ]
     entities.extend(
         HiveBoostEndSensorEntity(hass, entry, hive, dev)
-        for dev in devices
+        for dev in devices or []
         if dev["hiveType"] in BOOST_TYPES
     )
-    async_add_entities(entities, True)
+
+    hub_id = hive.session.hub_id
+    if hub_id:
+        holiday_data = async_get_holiday_data(hass, entry)
+        entities.extend(
+            [
+                HiveHolidayModeSensor(holiday_data, hub_id),
+                HiveHolidayStartSensor(holiday_data, hub_id),
+                HiveHolidayEndSensor(holiday_data, hub_id),
+            ]
+        )
+
+    if entities:
+        async_add_entities(entities, True)
 
 
 class HiveSensorEntity(HiveEntity, SensorEntity):
@@ -313,6 +336,139 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
             s_a.update({"Schedule not active": ""})
 
         return s_a
+
+
+class _HiveHolidayModeSensorBase(SensorEntity):
+    """Base for the Hive whole-home Holiday Mode sensors.
+
+    Holiday Mode is a hub-level setting with no Hive product behind it, and
+    get_holiday_mode() always calls the cloud API rather than going through
+    the device polling cache. So these sensors poll on their own, much longer,
+    interval and refresh on the holiday services' signal, not on SCAN_INTERVAL.
+    """
+
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+
+    def __init__(self, data: HiveHolidayModeData, hub_id: str, key: str) -> None:
+        """Initialise the sensor."""
+        self._data = data
+        self._attr_unique_id = f"{hub_id}-Holiday{key}"
+        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, hub_id)})
+
+    async def async_added_to_hass(self) -> None:
+        """Subscribe to updates and start polling once added."""
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self.hass, self._data.signal, self._async_schedule_refresh
+            )
+        )
+        self.async_on_remove(
+            async_track_time_interval(
+                self.hass, self._async_schedule_refresh, HOLIDAY_MODE_SCAN_INTERVAL
+            )
+        )
+        await self.async_update_ha_state(force_refresh=True)
+
+    @callback
+    def _async_schedule_refresh(self, _now: datetime | None = None) -> None:
+        """Schedule a state refresh."""
+        self.async_schedule_update_ha_state(force_refresh=True)
+
+    async def async_update(self) -> None:
+        """Fetch the latest Holiday Mode status from Hive."""
+        # The platform adds these with update_before_add, so an exception here
+        # (e.g. Hive's cloud timing out at boot) would stop the entity being
+        # added at all until the next restart. Go unavailable instead; the poll
+        # interval and dispatcher refreshes bring it back.
+        try:
+            result = await self._data.async_get()
+        except HiveReauthRequired:
+            self.platform.config_entry.async_start_reauth(self.hass)
+            result = None
+        except HIVE_HOLIDAY_ERRORS as err:
+            _LOGGER.warning("Failed to fetch Hive holiday mode: %r", err)
+            result = None
+        if result is None:
+            self._attr_available = False
+            return
+        self._attr_available = True
+        self._update_from_result(result)
+
+    @abstractmethod
+    def _update_from_result(self, result: dict) -> None:
+        """Update entity state from the fetched holiday mode data."""
+
+
+class HiveHolidayModeSensor(_HiveHolidayModeSensorBase):
+    """Sensor exposing Hive's whole-home Holiday Mode status."""
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = ["off", "scheduled", "active"]
+    _attr_translation_key = "holiday_mode"
+
+    def __init__(self, data: HiveHolidayModeData, hub_id: str) -> None:
+        """Initialise the Holiday Mode sensor."""
+        super().__init__(data, hub_id, "Mode")
+
+    def _update_from_result(self, result: dict) -> None:
+        if result.get("active"):
+            self._attr_native_value = "active"
+        elif result.get("enabled"):
+            self._attr_native_value = "scheduled"
+        else:
+            self._attr_native_value = "off"
+
+        # Hive's API intermittently omits start/end/temperature from an
+        # otherwise-valid response, even while active/enabled are reported
+        # correctly. Retain the last known value for a field rather than
+        # blanking it out, so a partial response doesn't cause the
+        # attributes to flicker empty between refreshes.
+        attrs = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        for key in ("start", "end"):
+            epoch_ms = result.get(key)
+            if epoch_ms is not None:
+                attrs[key] = datetime.fromtimestamp(epoch_ms / 1000, tz=UTC).isoformat()
+        if result.get("temperature") is not None:
+            attrs["temperature"] = result["temperature"]
+        self._attr_extra_state_attributes = attrs
+
+
+class _HiveHolidayModeDateSensor(_HiveHolidayModeSensorBase):
+    """Base for the Holiday Mode start/end timestamp sensors."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _result_key: str
+
+    def _update_from_result(self, result: dict) -> None:
+        # As with the attributes on HiveHolidayModeSensor, Hive's API can
+        # omit this field from an otherwise-valid response — retain the
+        # last known value rather than flickering to unknown.
+        epoch_ms = result.get(self._result_key)
+        if epoch_ms is not None:
+            self._attr_native_value = datetime.fromtimestamp(epoch_ms / 1000, tz=UTC)
+
+
+class HiveHolidayStartSensor(_HiveHolidayModeDateSensor):
+    """Sensor exposing Hive's Holiday Mode start date/time."""
+
+    _attr_translation_key = "holiday_start"
+    _result_key = "start"
+
+    def __init__(self, data: HiveHolidayModeData, hub_id: str) -> None:
+        """Initialise the Holiday Date Start sensor."""
+        super().__init__(data, hub_id, "DateStart")
+
+
+class HiveHolidayEndSensor(_HiveHolidayModeDateSensor):
+    """Sensor exposing Hive's Holiday Mode end date/time."""
+
+    _attr_translation_key = "holiday_end"
+    _result_key = "end"
+
+    def __init__(self, data: HiveHolidayModeData, hub_id: str) -> None:
+        """Initialise the Holiday Date End sensor."""
+        super().__init__(data, hub_id, "DateEnd")
 
 
 class HiveBoostEndSensorEntity(HiveEntity, SensorEntity):

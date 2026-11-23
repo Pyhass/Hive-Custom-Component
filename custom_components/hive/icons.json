@@ -14,6 +14,15 @@
       },
       "hot_water": {
         "default": "mdi:hand-water"
+      },
+      "holiday_mode": {
+        "default": "mdi:palm-tree"
+      },
+      "holiday_start": {
+        "default": "mdi:calendar-start"
+      },
+      "holiday_end": {
+        "default": "mdi:calendar-end"
       }
     }
   },
@@ -26,6 +35,12 @@
     },
     "boost_hot_water": {
       "service": "mdi:water-boiler"
+    },
+    "set_holiday_mode": {
+      "service": "mdi:palm-tree"
+    },
+    "cancel_holiday_mode": {
+      "service": "mdi:palm-tree-outline"
     }
   }
 }

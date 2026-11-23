@@ -29,4 +29,6 @@ PLATFORM_LOOKUP = {
 SERVICE_BOOST_HOT_WATER = "boost_hot_water"
 SERVICE_BOOST_HEATING_ON = "boost_heating_on"
 SERVICE_BOOST_HEATING_OFF = "boost_heating_off"
+SERVICE_SET_HOLIDAY_MODE = "set_holiday_mode"
+SERVICE_CANCEL_HOLIDAY_MODE = "cancel_holiday_mode"
 WATER_HEATER_MODES = ["on", "off"]
