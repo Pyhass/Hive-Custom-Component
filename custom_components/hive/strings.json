@@ -112,11 +112,11 @@
         },
         "start": {
           "name": "Start",
-          "description": "When holiday mode should begin."
+          "description": "When holiday mode should begin. A time without a UTC offset is read in Home Assistant's time zone."
         },
         "end": {
           "name": "End",
-          "description": "When holiday mode should end."
+          "description": "When holiday mode should end. A time without a UTC offset is read in Home Assistant's time zone."
         },
         "temperature": {
           "name": "Temperature",
