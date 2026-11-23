@@ -150,7 +150,7 @@ def mock_hive(
     hive.heating.getClimate = AsyncMock(side_effect=_echo)
     # Extra attributes on the heating sensors (min/max, boost end); no data by default.
     hive.heating.minmaxTemperature = AsyncMock(return_value=None)
-    hive.heating.get_target_temperature = AsyncMock(return_value=None)
+    hive.heating.getTargetTemperature = AsyncMock(return_value=None)
     hive.heating.getBoostStatus = AsyncMock(return_value="OFF")
     hive.heating.getBoostTime = AsyncMock(return_value=None)
     hive.hotwater.getBoost = AsyncMock(return_value="OFF")

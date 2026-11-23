@@ -47,6 +47,10 @@ boost_hot_water:
             - "off"
 set_holiday_mode:
   fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: hive
     start:
       required: true
       selector:
@@ -65,4 +69,8 @@ set_holiday_mode:
           step: 0.5
           unit_of_measurement: °
 cancel_holiday_mode:
-  fields: {}
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: hive

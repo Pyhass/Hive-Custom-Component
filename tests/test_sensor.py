@@ -323,7 +323,7 @@ async def test_current_temperature_attributes(
             "RestartMax": 22.0,
         }
     )
-    mock_hive.heating.get_target_temperature = AsyncMock(return_value=21.0)
+    mock_hive.heating.getTargetTemperature = AsyncMock(return_value=21.0)
 
     await _setup(hass, mock_config_entry)
 

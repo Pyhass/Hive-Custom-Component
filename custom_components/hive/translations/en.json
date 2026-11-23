@@ -106,6 +106,10 @@
       "name": "Set holiday mode",
       "description": "Schedules Hive's whole-home holiday mode, holding a frost-protection temperature for the given period.",
       "fields": {
+        "config_entry_id": {
+          "name": "Hive account",
+          "description": "The Hive account to use. Only needed when more than one is set up."
+        },
         "start": {
           "name": "Start",
           "description": "When holiday mode should begin."
@@ -122,7 +126,13 @@
     },
     "cancel_holiday_mode": {
       "name": "Cancel holiday mode",
-      "description": "Cancels any scheduled or currently active Hive holiday mode."
+      "description": "Cancels any scheduled or currently active Hive holiday mode.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Hive account",
+          "description": "The Hive account to use. Only needed when more than one is set up."
+        }
+      }
     }
   },
   "entity": {
@@ -140,7 +150,67 @@
           "off": "Off",
           "schedule": "Schedule"
         }
+      },
+      "holiday_mode": {
+        "name": "Holiday mode",
+        "state": {
+          "off": "Off",
+          "scheduled": "Scheduled",
+          "active": "Active"
+        },
+        "state_attributes": {
+          "start": {
+            "name": "Start"
+          },
+          "end": {
+            "name": "End"
+          },
+          "temperature": {
+            "name": "Temperature"
+          }
+        }
+      },
+      "holiday_start": {
+        "name": "Holiday date start"
+      },
+      "holiday_end": {
+        "name": "Holiday date end"
       }
+    }
+  },
+  "exceptions": {
+    "entry_not_found": {
+      "message": "No Hive account with config entry ID {entry_id} was found."
+    },
+    "entry_not_loaded": {
+      "message": "The Hive account {title} is not loaded."
+    },
+    "no_entry_loaded": {
+      "message": "No Hive account is loaded."
+    },
+    "multiple_entries": {
+      "message": "More than one Hive account is set up. Choose which one to use."
+    },
+    "end_before_start": {
+      "message": "The holiday mode end must be after its start."
+    },
+    "end_in_past": {
+      "message": "The holiday mode end must be in the future."
+    },
+    "reauth_required": {
+      "message": "Hive needs you to sign in again. Reauthenticate the integration, then try again."
+    },
+    "set_holiday_mode_failed": {
+      "message": "Failed to set Hive holiday mode: {error}"
+    },
+    "set_holiday_mode_rejected": {
+      "message": "Hive rejected the set holiday mode request."
+    },
+    "cancel_holiday_mode_failed": {
+      "message": "Failed to cancel Hive holiday mode: {error}"
+    },
+    "cancel_holiday_mode_rejected": {
+      "message": "Hive rejected the cancel holiday mode request."
     }
   }
 }

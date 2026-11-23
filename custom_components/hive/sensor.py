@@ -1,16 +1,14 @@
 """Support for the Hive sensors."""
 
-import asyncio
+from abc import abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 import logging
-import time
 from typing import Any
 
-from aiohttp import ClientError
 from apyhiveapi import Hive
-from apyhiveapi.helper.hive_exceptions import HiveApiError
+from apyhiveapi.helper.hive_exceptions import HiveReauthRequired
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -35,6 +33,7 @@ from homeassistant.util import dt as dt_util
 from . import HiveConfigEntry
 from .const import DOMAIN
 from .entity import HiveEntity
+from .holiday import HIVE_HOLIDAY_ERRORS, HiveHolidayModeData, async_get_holiday_data
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -134,7 +133,7 @@ async def async_setup_entry(
 
     hub_id = hive.session.hub_id
     if hub_id:
-        holiday_data = _HiveHolidayModeData(hive)
+        holiday_data = async_get_holiday_data(hass, entry)
         entities.extend(
             [
                 HiveHolidayModeSensor(holiday_data, hub_id),
@@ -213,7 +212,7 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
 
         # This sensor's own state is the current temperature (getSensor reads it).
         temp_current = self.device.get("status", {}).get("state")
-        temperature_target = await self.hive.heating.get_target_temperature(self.device)
+        temperature_target = await self.hive.heating.getTargetTemperature(self.device)
 
         if (
             isinstance(temp_current, (int, float))
@@ -339,49 +338,19 @@ class HiveSensorEntity(HiveEntity, SensorEntity):
         return s_a
 
 
-class _HiveHolidayModeData:
-    """Shares a single Hive Holiday Mode API fetch across its sensors.
-
-    get_holiday_mode() always makes a fresh cloud API call, so without this
-    the status/start/end sensors below would each fetch independently and
-    triple the calls every time they're refreshed together (dispatcher
-    signal, or their shared poll interval). Short-lived cache: refreshes
-    together resolve to a single fetch.
-    """
-
-    _CACHE_SECONDS = 5
-
-    def __init__(self, hive) -> None:
-        """Initialise the shared fetch cache."""
-        self._hive = hive
-        self._data: dict | None = None
-        self._fetched_at: float | None = None
-        self._lock = asyncio.Lock()
-
-    async def async_get(self) -> dict | None:
-        """Return the latest holiday mode data, fetching if the cache is stale."""
-        async with self._lock:
-            now = time.monotonic()
-            if self._fetched_at is None or now - self._fetched_at > self._CACHE_SECONDS:
-                self._data = await self._hive.hub.get_holiday_mode()
-                self._fetched_at = now
-            return self._data
-
-
 class _HiveHolidayModeSensorBase(SensorEntity):
     """Base for the Hive whole-home Holiday Mode sensors.
 
-    Unlike the other sensors in this platform, Holiday Mode is a hub-level
-    feature (no per-device Hive product backs it), and get_holiday_mode()
-    always makes a fresh API call rather than going through the
-    rate-limited device polling cache — so these entities manage their own,
-    much longer, poll interval instead of relying on the module-level
-    SCAN_INTERVAL the other sensors use.
+    Holiday Mode is a hub-level setting with no Hive product behind it, and
+    get_holiday_mode() always calls the cloud API rather than going through
+    the device polling cache. So these sensors poll on their own, much longer,
+    interval and refresh on the holiday services' signal, not on SCAN_INTERVAL.
     """
 
+    _attr_has_entity_name = True
     _attr_should_poll = False
 
-    def __init__(self, data: _HiveHolidayModeData, hub_id: str, key: str) -> None:
+    def __init__(self, data: HiveHolidayModeData, hub_id: str, key: str) -> None:
         """Initialise the sensor."""
         self._data = data
         self._attr_unique_id = f"{hub_id}-Holiday{key}"
@@ -390,7 +359,9 @@ class _HiveHolidayModeSensorBase(SensorEntity):
     async def async_added_to_hass(self) -> None:
         """Subscribe to updates and start polling once added."""
         self.async_on_remove(
-            async_dispatcher_connect(self.hass, DOMAIN, self._async_schedule_refresh)
+            async_dispatcher_connect(
+                self.hass, self._data.signal, self._async_schedule_refresh
+            )
         )
         self.async_on_remove(
             async_track_time_interval(
@@ -412,7 +383,10 @@ class _HiveHolidayModeSensorBase(SensorEntity):
         # interval and dispatcher refreshes bring it back.
         try:
             result = await self._data.async_get()
-        except (TimeoutError, ClientError, HiveApiError) as err:
+        except HiveReauthRequired:
+            self.platform.config_entry.async_start_reauth(self.hass)
+            result = None
+        except HIVE_HOLIDAY_ERRORS as err:
             _LOGGER.warning("Failed to fetch Hive holiday mode: %r", err)
             result = None
         if result is None:
@@ -421,9 +395,9 @@ class _HiveHolidayModeSensorBase(SensorEntity):
         self._attr_available = True
         self._update_from_result(result)
 
+    @abstractmethod
     def _update_from_result(self, result: dict) -> None:
         """Update entity state from the fetched holiday mode data."""
-        raise NotImplementedError
 
 
 class HiveHolidayModeSensor(_HiveHolidayModeSensorBase):
@@ -431,10 +405,9 @@ class HiveHolidayModeSensor(_HiveHolidayModeSensorBase):
 
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = ["off", "scheduled", "active"]
-    _attr_icon = "mdi:palm-tree"
-    _attr_name = "Holiday Mode"
+    _attr_translation_key = "holiday_mode"
 
-    def __init__(self, data: _HiveHolidayModeData, hub_id: str) -> None:
+    def __init__(self, data: HiveHolidayModeData, hub_id: str) -> None:
         """Initialise the Holiday Mode sensor."""
         super().__init__(data, hub_id, "Mode")
 
@@ -479,11 +452,10 @@ class _HiveHolidayModeDateSensor(_HiveHolidayModeSensorBase):
 class HiveHolidayStartSensor(_HiveHolidayModeDateSensor):
     """Sensor exposing Hive's Holiday Mode start date/time."""
 
-    _attr_name = "Holiday Date Start"
-    _attr_icon = "mdi:calendar-start"
+    _attr_translation_key = "holiday_start"
     _result_key = "start"
 
-    def __init__(self, data: _HiveHolidayModeData, hub_id: str) -> None:
+    def __init__(self, data: HiveHolidayModeData, hub_id: str) -> None:
         """Initialise the Holiday Date Start sensor."""
         super().__init__(data, hub_id, "DateStart")
 
@@ -491,11 +463,10 @@ class HiveHolidayStartSensor(_HiveHolidayModeDateSensor):
 class HiveHolidayEndSensor(_HiveHolidayModeDateSensor):
     """Sensor exposing Hive's Holiday Mode end date/time."""
 
-    _attr_name = "Holiday Date End"
-    _attr_icon = "mdi:calendar-end"
+    _attr_translation_key = "holiday_end"
     _result_key = "end"
 
-    def __init__(self, data: _HiveHolidayModeData, hub_id: str) -> None:
+    def __init__(self, data: HiveHolidayModeData, hub_id: str) -> None:
         """Initialise the Holiday Date End sensor."""
         super().__init__(data, hub_id, "DateEnd")
 
