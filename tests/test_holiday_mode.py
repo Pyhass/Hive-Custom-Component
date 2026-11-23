@@ -14,6 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.util import dt as dt_util
 
 from custom_components.hive import holiday, sensor
 from custom_components.hive.const import (
@@ -387,19 +388,76 @@ async def test_catch_up_refreshes_replace_earlier_ones(
     data = hass.data[holiday.DATA_HOLIDAY][mock_config_entry.entry_id]
 
     await _set(hass)
-    # Refresh at the future start plus four catch-ups after it.
-    assert len(data._timers) == 5
+    assert len(data._catch_up) == 4
     await hass.services.async_call(
         DOMAIN, SERVICE_CANCEL_HOLIDAY_MODE, {}, blocking=True
     )
-    assert len(data._timers) == 4
+    assert len(data._catch_up) == 4
 
     calls = mock_hive.hub.get_holiday_mode.await_count
-    freezer.tick(timedelta(seconds=31))
-    async_fire_time_changed(hass)
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=31))
     await hass.async_block_till_done()
     # One fetch per sensor (the cache is off in these tests).
     assert mock_hive.hub.get_holiday_mode.await_count == calls + 3
+
+
+@pytest.mark.freeze_time("2026-12-20 10:00:00+00:00")
+async def test_refreshes_at_start_and_end(
+    hass: HomeAssistant,
+    mock_hive: MagicMock,
+    mock_config_entry: MockConfigEntry,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """A scheduled holiday found at setup (e.g. after a restart) refreshes at its edges."""
+    mock_hive.hub.get_holiday_mode = AsyncMock(return_value=SCHEDULED)
+    await _setup(hass, mock_config_entry)
+    data = hass.data[holiday.DATA_HOLIDAY][mock_config_entry.entry_id]
+    assert {key: when for key, (when, _) in data._transitions.items()} == {
+        "start": START,
+        "end": END,
+    }
+    assert hass.states.get(_entity_id(hass, "Mode")).state == "scheduled"
+
+    # At the start Hive reports active; the sensors follow without a poll.
+    mock_hive.hub.get_holiday_mode.return_value = {**SCHEDULED, "active": True}
+    freezer.move_to(START)
+    async_fire_time_changed(hass, dt_util.utcnow())
+    await hass.async_block_till_done()
+    assert hass.states.get(_entity_id(hass, "Mode")).state == "active"
+    assert set(data._transitions) == {"end"}
+
+    # Hive is still catching up at the end; a catch-up refresh sees it off.
+    freezer.move_to(END)
+    async_fire_time_changed(hass, dt_util.utcnow())
+    await hass.async_block_till_done()
+    assert hass.states.get(_entity_id(hass, "Mode")).state == "active"
+
+    mock_hive.hub.get_holiday_mode.return_value = {
+        **SCHEDULED,
+        "enabled": False,
+        "active": False,
+    }
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=31))
+    await hass.async_block_till_done()
+    assert hass.states.get(_entity_id(hass, "Mode")).state == "off"
+    assert not data._transitions
+
+
+async def test_cancel_clears_transition_refreshes(
+    hass: HomeAssistant, mock_hive: MagicMock, mock_config_entry: MockConfigEntry
+) -> None:
+    """Once Hive reports holiday mode off, the start/end refreshes are dropped."""
+    mock_hive.hub.get_holiday_mode = AsyncMock(return_value=SCHEDULED)
+    await _setup(hass, mock_config_entry)
+    data = hass.data[holiday.DATA_HOLIDAY][mock_config_entry.entry_id]
+    assert set(data._transitions) == {"start", "end"}
+
+    mock_hive.hub.get_holiday_mode.return_value = {"enabled": False, "active": False}
+    await hass.services.async_call(
+        DOMAIN, SERVICE_CANCEL_HOLIDAY_MODE, {}, blocking=True
+    )
+    await hass.async_block_till_done()
+    assert not data._transitions
 
 
 async def test_holiday_services_with_two_entries(

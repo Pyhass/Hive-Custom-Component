@@ -134,7 +134,7 @@ async def _async_set_holiday_mode(call: ServiceCall) -> None:
         raise HomeAssistantError(
             translation_domain=DOMAIN, translation_key="set_holiday_mode_rejected"
         )
-    async_get_holiday_data(call.hass, entry).async_changed(start)
+    async_get_holiday_data(call.hass, entry).async_changed()
 
 
 async def _async_cancel_holiday_mode(call: ServiceCall) -> None:
